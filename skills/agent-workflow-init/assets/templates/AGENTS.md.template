@@ -1,0 +1,53 @@
+# AGENTS.md
+
+## Project agent workflow
+
+This repository uses a multi-agent workflow for requirement-driven development.
+
+The user communicates only with the main Orchestrator thread. Subagents do not accept user instructions as the source of truth.
+
+The Orchestrator thread is a coordinator only. It talks to the user, manages state, and delegates work to subagents via the Agent tool. It never reads or modifies source code directly. Implementation, Review, Verification, and QA are always performed by independent subagents.
+
+Each requirement must have its own request directory:
+
+```text
+docs/agent/requests/<request_id>/
+```
+
+Each request directory must contain:
+
+```text
+requirements.md
+acceptance.md
+plan.md
+risk.md
+review.md
+implementation.md
+qa.md
+handoff.md
+decision-log.md
+rollback.md
+state.json
+changes/
+```
+
+After the user confirms both requirements and acceptance, the Orchestrator automatically continues through Plan, Implementation, Spec Compliance Review, Code Quality Review, Verification, QA, Fix, and Re-QA.
+
+Subagent prompts must be self-contained via SubagentContextPacket (task, goal, files, non-goals, verification). Do not pass conversation history to subagents.
+
+Implementer subagents report one of four statuses: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, BLOCKED. The Orchestrator handles each appropriately.
+
+If safe backlog remains, the Orchestrator must continue automatically instead of stopping at a generic progress summary.
+
+The Orchestrator may pause only for:
+
+- business decisions that cannot be inferred
+- conflicting requirements
+- missing credentials, permissions, or external access
+- destructive operations
+- missing test/build environment that cannot be reasonably repaired
+- major architecture, data, security, or product risk
+
+After each stage, update handoff.md as a checkpoint. On resume, read handoff.md first — never resume from memory alone.
+
+Implementation can modify source code and tests. Review and QA are read-only.
