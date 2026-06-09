@@ -1,5 +1,7 @@
 # Agent Workflow
 
+English | [中文](README_zh-CN.md)
+
 Orchestrator-subagent workflow skills for AI coding agents. Turns your AI agent into a disciplined project manager that delegates work to specialized subagents instead of doing everything itself.
 
 ## What This Does
