@@ -9,252 +9,224 @@
         <img src="https://img.shields.io/github/v/release/xzh20121116/agent-workflow?style=flat-square" /></a>
 </p>
 
+<h1 align="center">Agent Workflow</h1>
+
+<p align="center"><strong>Stop letting your AI coding agent freestyle your codebase.</strong></p>
+
 <p align="center">
-    <strong>Agent Workflow</strong><br/>
-    Orchestrator-subagent workflow skills for AI coding agents.<br/>
-    Turns your AI agent into a disciplined project manager that delegates work to specialized subagents.
+    Lightweight workflow skills for Claude Code, Codex, and other AI coding agents.<br/>
+    Turns a "vibe coder" into a disciplined project manager that clarifies requirements,<br/>
+    delegates to subagents, runs reviews, and delivers evidence — before claiming it's done.
 </p>
 
 <p align="center">
     <a href="README.md"><strong>English</strong></a>
     ·
     <a href="README_zh-CN.md"><strong>中文</strong></a>
+    ·
+    <a href="docs/comparison.md">Comparison with Aegis & Superpowers</a>
 </p>
 
 ---
 
-## The Problem
+## Why This Exists
 
-You give your AI agent a complex task: "add phone number change to the user profile." What happens next?
+AI coding agents are powerful. But give them a complex task and watch what happens:
 
-- It starts writing code without understanding the full requirement
-- It implements the backend but forgets the frontend form
-- The UI looks like every other AI-generated page: Inter font, purple gradient, 3 equal columns
-- It says "done" without running a single test
-- You ask "what about error handling?" and it starts over from scratch
+- They start coding before understanding the requirement
+- The main thread does everything — chatting, coding, testing, reviewing — all in one bloated context
+- Context gets compressed, goals get lost, behavior drifts
+- They say "done" without running a single test
+- The frontend looks like every other AI-generated page: Inter font, purple gradient, 3 equal columns
+- You ask "did you test the error case?" and they start over from scratch
 
-**Agent Workflow fixes this.** It turns your AI agent into a disciplined project manager that delegates to specialized subagents — one implements, another reviews, another verifies. The main thread never touches code.
+**Agent Workflow fixes this** by adding one constraint: **the main thread never touches code.**
 
-## How It Works in Practice
+It becomes an Orchestrator — a project manager that talks to you, clarifies requirements, delegates to specialized subagents, and delivers results with evidence. Every coding, testing, and review task goes to an independent subagent with a self-contained context packet. No conversation history leaking. No context bloat. No drift.
 
-### Scenario 1: Full-Stack Feature — "Add phone number change"
+## Before / After
 
-You say:
-
-```text
-用重任务流程处理：用户个人中心增加修改手机号功能
-```
-
-**What happens next:**
+### Without Agent Workflow
 
 ```
-You:  "需要支持哪些验证方式？短信验证码还是邮箱验证码？"
-You:  "短信验证码"
-You:  "旧手机号需要验证吗？"
-You:  "需要"
-Orchestrator writes requirements.md → you confirm
-Orchestrator writes acceptance.md → you confirm
-Orchestrator writes plan.md
-
-── Orchestrator dispatches IMPLEMENTATION subagent ──
-   Subagent reads plan, implements backend API + frontend form
-   Returns: DONE (4 files changed, tests passing)
-
-── Orchestrator dispatches SPEC COMPLIANCE REVIEWER ──
-   Reviewer reads actual code, compares to requirements
-   Result: PASS — all requirements covered
-
-── Orchestrator dispatches CODE QUALITY REVIEWER ──
-   Reviewer checks structure, error handling, patterns
-   Result: PASS — 1 minor issue noted
-
-── Orchestrator dispatches VERIFICATION subagent ──
-   Runs tests, lint, build for changed files
-   Result: PASS — 12 tests, 0 failures
-
-── Orchestrator dispatches QA subagent ──
-   Verifies every acceptance criterion against code
-   Result: PASS — all 8 criteria satisfied
-
-Orchestrator: "完成。修改手机号功能已实现，包含短信验证、旧手机验证、
-60秒重发倒计时。共修改 4 个文件，通过全部 12 个测试。"
+User:  给个人中心加手机号修改功能
+AI:    好的，我来改几个文件
+AI:    [修改了 6 个文件]
+AI:    已完成
+User:  测了吗？
+AI:    理论上应该可以
+User:  旧手机号要验证吗？
+AI:    好的，我加上
+AI:    [又改了 4 个文件]
+AI:    已完成
+User:  UI 怎么还是三等分布局...
+AI:    我来重新设计
+AI:    [上下文已压缩，忘记了之前的讨论]
 ```
 
-You never wrote a line of code. You answered 4 questions. The workflow did the rest.
-
-### Scenario 2: Frontend Beautification — "This landing page is ugly"
-
-You say:
-
-```text
-用重任务流程美化 src/pages/landing/index.tsx 页面
-```
-
-**What happens next:**
-
-The Orchestrator detects this is a frontend task and automatically:
-- Uses the **frontend implementer** with design constraints (typography, color, layout, motion rules)
-- Adds a **UI review stage** after code quality review
+### With Agent Workflow
 
 ```
-── Orchestrator dispatches FRONTEND IMPLEMENTATION subagent ──
-   Subagent implements with design constraints:
-   - Font: Geist Sans instead of Inter
-   - Color: warm off-black #2F3437, single accent #3B82F6
-   - Layout: asymmetric grid, py-28 sections, no 3-equal-columns
-   - Motion: cubic-bezier(0.16,1,0.3,1), respects reduced-motion
-   Returns: DONE (3 files changed)
+User:  用重任务流程处理：个人中心增加修改手机号功能
 
-── Spec + Code Quality reviews pass ──
+Orchestrator:
+  1. "需要哪些验证方式？" → 短信验证码
+  2. "旧手机号需要验证吗？" → 需要
+  3. 写 requirements.md → 用户确认
+  4. 写 acceptance.md → 用户确认
+  5. 写 plan.md
 
-── Orchestrator dispatches UI REVIEWER ──
-   AI Slop Score: 2/10 (was 8/10 before)
-   - No banned fonts found ✓
-   - No neon gradients ✓
-   - No 3 equal columns ✓
-   - Responsive on mobile/tablet ✓
-   - Color contrast WCAG AA ✓
-   Result: PASS
+  ── 派发 Implementation Subagent ──
+     返回: DONE (4 files, tests passing)
+
+  ── 派发 Spec Compliance Reviewer ──
+     结果: PASS — all requirements covered
+
+  ── 派发 Code Quality Reviewer ──
+     结果: PASS
+
+  ── 派发 Verification Subagent ──
+     结果: PASS — 12 tests, 0 failures
+
+  ── 派发 QA Subagent ──
+     结果: PASS — 8/8 acceptance criteria
+
+  → 交付：功能完成，附带测试证据
 ```
 
-The UI reviewer catches problems that code review misses: ugly fonts, generic layouts, AI tells.
+The user answered 3 questions. The Orchestrator managed the rest. Every step has evidence.
 
-### Scenario 3: Bug Fix — "Payment callback fails intermittently"
+## How It Works
 
-You say:
+```mermaid
+graph LR
+    User["User"] <-->|"clarify, confirm, handoff"| O["Orchestrator<br/>(main thread)"]
+    O -->|"writes"| R["requirements.md"]
+    O -->|"writes"| A["acceptance.md"]
+    O -->|"writes"| P["plan.md"]
 
-```text
-用重任务流程处理：支付回调偶发失败，大概一天出现几次
+    O -->|"dispatches"| IMP["Implementation<br/>Subagent"]
+    O -->|"dispatches"| SR["Spec Reviewer"]
+    O -->|"dispatches"| QR["Code Quality<br/>Reviewer"]
+    O -->|"dispatches"| UI["UI Reviewer<br/>(frontend only)"]
+    O -->|"dispatches"| VER["Verification<br/>Subagent"]
+    O -->|"dispatches"| QA["QA Subagent"]
+
+    IMP -->|"status + evidence"| O
+    SR -->|"pass/fail"| O
+    QR -->|"pass/fail"| O
+    UI -->|"AI Slop Score"| O
+    VER -->|"test results"| O
+    QA -->|"criteria check"| O
+
+    style O fill:#2563EB,stroke:#1D4ED8,color:#fff
+    style IMP fill:#10B981,stroke:#059669,color:#fff
+    style SR fill:#F59E0B,stroke:#D97706,color:#fff
+    style QR fill:#F59E0B,stroke:#D97706,color:#fff
+    style UI fill:#EC4899,stroke:#DB2777,color:#fff
+    style VER fill:#8B5CF6,stroke:#7C3AED,color:#fff
+    style QA fill:#8B5CF6,stroke:#7C3AED,color:#fff
 ```
 
-**What happens next:**
+**The Orchestrator never edits code directly.** It only:
 
-```
-Orchestrator: "回调失败时有错误日志吗？"
-You:  "有，显示 timeout"
-Orchestrator: "第三方支付平台的超时设置是多少？"
-You:  "5秒"
-Orchestrator: "我们的回调处理平均耗时？"
-You:  "不确定，但有数据库写入操作"
+1. **Talks to the user** — requirement clarification, confirmations, final handoff
+2. **Manages state** — reads/writes state.json, requirements, acceptance, plan
+3. **Dispatches subagents** — builds self-contained context packets, delegates via Agent tool
+4. **Synthesizes results** — handles subagent status, decides next action
 
-Orchestrator writes requirements (root cause analysis + fix)
+## Why Subagents?
 
-── Implementation subagent investigates ──
-   Finds: callback handler does synchronous DB write,
-   occasionally exceeds 5s under load
-   Fix: async DB write + response-first pattern
-   Returns: DONE_WITH_CONCERNS
-     "Concern: the async write means callback returns success
-      before DB is updated. Need idempotency check."
+This isn't just architectural aesthetics. It solves real problems:
 
-Orchestrator reads concern, decides it's valid, adds
-idempotency requirement to the plan
+| Problem | How subagents fix it |
+|---------|---------------------|
+| **Context bloat** | Each subagent gets only what it needs — a focused context packet, not the entire conversation |
+| **Goal drift** | Subagents have explicit stop conditions; they don't wander |
+| **"Done" without evidence** | Verification and QA are separate subagents that run real tests, not vibes |
+| **Reviewer bias** | The reviewer is a different subagent than the implementer — it reads the actual code, not the report |
+| **Main thread overload** | The Orchestrator stays lightweight; code, tests, and reviews happen in parallel isolation |
 
-── Re-dispatches implementation with updated requirements ──
-   Returns: DONE
+## Workflow Stages
 
-── Reviews, verification, QA all pass ──
-```
+```mermaid
+graph TD
+    A["requirement_clarification"] --> B["requirements"]
+    B --> C["acceptance"]
+    C --> D["plan"]
+    D --> E["implementation"]
+    E --> F["spec_compliance_review"]
+    F --> G["code_quality_review"]
+    G --> H{"Frontend task?"}
+    H -->|Yes| I["ui_review"]
+    H -->|No| J["verification"]
+    I --> J
+    J --> K["qa"]
+    K --> L["final_handoff"]
 
-The `DONE_WITH_CONCERNS` status lets the subagent flag doubts without blocking. The Orchestrator decides whether to address them.
-
-### Scenario 4: Refactoring — "This service file is 800 lines"
-
-You say:
-
-```text
-用重任务流程重构 src/services/order.service.ts，太臃肿了
-```
-
-**What happens next:**
-
-```
-Orchestrator: "拆分的目标是什么？按业务领域还是按技术层次？"
-You:  "按业务领域，把订单、支付、通知拆开"
-Orchestrator: "现有的测试覆盖情况？"
-You:  "有单元测试，覆盖率约 60%"
-
-Orchestrator writes plan: split into 3 services + shared types
-
-── Implementation subagent works in worktree (high-risk) ──
-   Splits order.service.ts into:
-   - order.service.ts (order CRUD)
-   - payment.service.ts (payment processing)
-   - notification.service.ts (email/SMS/webhook)
-   - shared/types.ts (common types)
-   Returns: DONE (1 file deleted, 4 files created)
-
-── Spec compliance reviewer ──
-   Checks: all original functions still available?
-   Result: PASS — public API unchanged
-
-── Code quality reviewer ──
-   Checks: clear boundaries? circular deps?
-   Result: PASS — clean separation
-
-── Verification subagent ──
-   Runs existing tests against refactored code
-   Result: PASS — all 24 tests still pass
-
-── QA subagent ──
-   Verifies: no breaking changes to external consumers
-   Result: PASS
+    style A fill:#3B82F6,stroke:#2563EB,color:#fff
+    style E fill:#10B981,stroke:#059669,color:#fff
+    style F fill:#F59E0B,stroke:#D97706,color:#fff
+    style G fill:#F59E0B,stroke:#D97706,color:#fff
+    style I fill:#EC4899,stroke:#DB2777,color:#fff
+    style J fill:#8B5CF6,stroke:#7C3AED,color:#fff
+    style K fill:#8B5CF6,stroke:#7C3AED,color:#fff
+    style L fill:#3B82F6,stroke:#2563EB,color:#fff
 ```
 
-High-risk tasks automatically use **worktree isolation** — the refactoring happens in an isolated branch, never touching your working directory until it's verified.
+| Stage | Who runs | What happens |
+|-------|----------|-------------|
+| `requirement_clarification` | Orchestrator | Talks to user, clarifies ambiguities |
+| `requirements` | Orchestrator | Writes requirements.md, user confirms |
+| `acceptance` | Orchestrator | Writes acceptance.md with testable criteria, user confirms |
+| `plan` | Orchestrator | Writes plan.md with executable task breakdown |
+| `implementation` | Subagent | Implements code (worktree isolation for high-risk) |
+| `spec_compliance_review` | Subagent | Reads actual code, compares to requirements line by line |
+| `code_quality_review` | Subagent | Checks structure, correctness, maintainability |
+| `ui_review` | Subagent | Catches AI slop — fonts, gradients, layout, responsiveness |
+| `verification` | Subagent | Runs tests, lint, build |
+| `qa` | Subagent | Verifies every acceptance criterion against code |
+| `final_handoff` | Orchestrator | Reports results with evidence bundle |
 
-## Core Architecture
+## The UI Reviewer: Killing AI Slop
 
+AI-generated frontends have a distinctive look: Inter font everywhere, purple-blue gradients, 3 equal columns, heavy shadows, placeholder content. We call this **AI slop**.
+
+The UI Reviewer is a dedicated subagent that catches what code review misses:
+
+```mermaid
+graph LR
+    UI["UI Reviewer"] --> T["Typography<br/>No Inter/Roboto<br/>No #000000 text"]
+    UI --> C["Color<br/>No neon gradients<br/>Max 1 accent"]
+    UI --> L["Layout<br/>No 3 equal columns<br/>Generous whitespace"]
+    UI --> M["Motion<br/>Custom cubic-bezier<br/>Respect reduced-motion"]
+    UI --> R["Responsive<br/>375px mobile<br/>44px touch targets"]
+    UI --> A["Accessibility<br/>WCAG AA contrast<br/>Focus states"]
+
+    style UI fill:#EC4899,stroke:#DB2777,color:#fff
 ```
-User ←→ Orchestrator (main thread)
-              │
-              ├── Implementation Subagent
-              ├── Spec Compliance Reviewer
-              ├── Code Quality Reviewer
-              ├── UI Reviewer (frontend tasks)
-              ├── Verification Subagent
-              └── QA Subagent
-```
 
-The Orchestrator has exactly **four jobs**:
+It outputs an **AI Slop Score (0-10)**: 0 = looks handcrafted, 10 = maximum AI slop.
 
-1. **Talk to the user** — requirement clarification, confirmations, final handoff
-2. **Manage state** — read/write state.json, requirements, acceptance, plan
-3. **Dispatch subagents** — build self-contained SubagentContextPacket, delegate via Agent tool
-4. **Synthesize results** — handle implementer status, decide next action
-
-The Orchestrator **never** reads source code, runs tests, writes implementation, or performs review directly.
+The frontend implementer also gets **design constraints injected into its prompt**: typography rules, color palette limits, layout patterns, motion guidelines, icon choices, and content rules (no placeholder names, no em-dashes, real copy only).
 
 ## Key Features
 
-| Feature | Description |
+| Feature | What it does |
 |---------|-------------|
-| **Orchestrator-subagent separation** | Main thread coordinates, subagents execute. No self-coding. |
+| **Orchestrator-subagent separation** | Main thread coordinates, subagents execute. The Orchestrator never writes code. |
 | **SubagentContextPacket** | Self-contained prompts with task, goal, files, non-goals, verification. No conversation history leaking. |
 | **Two-stage review** | Spec compliance (did you build the right thing?) + code quality (did you build it well?) |
-| **UI review** | Catches AI-generated UI problems: ugly fonts, neon gradients, generic layouts. AI Slop Score 0-10. |
-| **Frontend design constraints** | Injects typography, color, layout, and motion rules into implementation prompts. |
-| **Implementer 4-status return** | DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED — Orchestrator handles each appropriately. |
+| **UI review** | AI Slop Score (0-10), responsive check, accessibility audit, design constraint enforcement |
+| **Frontend design constraints** | Typography, color, layout, motion rules injected into implementation prompts |
+| **Implementer 4-status return** | `DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — Orchestrator handles each |
 | **Checkpoint & resume** | Survives context resets via handoff.md. Never resumes from memory alone. |
-| **Drift detection** | After each stage, verifies work still serves original intent. |
+| **Drift detection** | After each stage, verifies work still serves original intent |
+| **Risk-based isolation** | High-risk tasks use git worktree isolation; medium-risk shares working directory |
 
-## Stage Flow
+## Quick Start
 
-```
-requirement_clarification  (Orchestrator talks to user)
-→ requirements             (Orchestrator writes requirements.md)
-→ acceptance               (Orchestrator writes acceptance.md, user confirms)
-→ plan                     (Orchestrator writes plan.md)
-→ implementation           (Subagent implements, worktree if high-risk)
-→ spec_compliance_review   (Subagent: did you build the right thing?)
-→ code_quality_review      (Subagent: is the code well-built?)
-→ ui_review                (Subagent: frontend tasks only, catches AI slop)
-→ verification             (Subagent: runs tests, lint, build)
-→ qa                       (Subagent: verifies acceptance criteria)
-→ final_handoff            (Orchestrator reports to user)
-```
-
-## Installation
+### AI-Assisted Install (Recommended)
 
 Paste this to your AI coding agent:
 
@@ -262,7 +234,80 @@ Paste this to your AI coding agent:
 请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
 ```
 
-## Subagent Prompt Templates
+The agent will detect your host (Claude Code, Codex, etc.), clone the repo, set up the correct skill paths, and verify the installation.
+
+### Manual Install
+
+```bash
+# Clone to a central location
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
+
+# Symlink to your host's skill directory
+# Claude Code:
+ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.claude/skills/agent-workflow-init
+ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workflow-start
+
+# Codex App:
+ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.codex/skills/agent-workflow-init
+ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workflow-start
+```
+
+## Usage
+
+### Initialize a project
+
+```text
+帮我用 agent-workflow 初始化当前项目
+```
+
+This sets up `docs/agent/` with project config, request templates, and AGENTS.md.
+
+### Start a feature (heavy workflow)
+
+```text
+用重任务流程处理：用户个人中心增加修改手机号功能
+```
+
+The Orchestrator will clarify requirements, write acceptance criteria, get your confirmation, then automatically delegate through the full stage flow.
+
+### Fix a bug
+
+```text
+用重任务流程处理：支付回调偶发失败，大概一天出现几次
+```
+
+The Orchestrator investigates with you first, then delegates root cause analysis and fix to the implementation subagent.
+
+### Beautify a frontend page
+
+```text
+用重任务流程美化 src/pages/landing/index.tsx 页面
+```
+
+Automatically uses the frontend implementer with design constraints, and adds a UI review stage.
+
+### Run spec compliance review only
+
+```text
+帮我审查 src/services/auth.service.ts 是否符合 docs/requirements.md 中的需求
+```
+
+### Run code quality review only
+
+```text
+帮我做代码质量审查：src/services/order.service.ts
+```
+
+## Included Skills
+
+Two skills, zero config:
+
+| Skill | Purpose |
+|-------|---------|
+| `agent-workflow-init` | Project-level bootstrapper. Creates `docs/agent/` structure, AGENTS.md, project config. |
+| `agent-workflow-start` | Request-level entry point. Creates request workspace, drives the full workflow from clarification to delivery. |
+
+### Subagent Prompt Templates
 
 Each role has a dedicated prompt template in `skills/agent-workflow-start/references/`:
 
@@ -270,79 +315,89 @@ Each role has a dedicated prompt template in `skills/agent-workflow-start/refere
 |----------|------|-------------|
 | `implementer-prompt.md` | Backend implementation | SubagentContextPacket, 4-status return |
 | `frontend-implementer-prompt.md` | Frontend implementation | Design constraints (typography, color, layout, motion) |
-| `spec-reviewer-prompt.md` | Spec compliance review | "Do Not Trust the Report" directive |
+| `spec-reviewer-prompt.md` | Spec compliance review | "Do Not Trust the Report" — reads actual code |
 | `code-quality-reviewer-prompt.md` | Code quality review | Structure, correctness, maintainability |
-| `ui-reviewer-prompt.md` | UI/visual review | AI-slop detection, responsive check, accessibility |
+| `ui-reviewer-prompt.md` | UI/visual review | AI Slop Score, responsive check, accessibility |
 | `verification-prompt.md` | Test/lint/build | Runs project test suite |
 | `qa-prompt.md` | Acceptance criteria | Verifies every criterion against code |
 
-## Design Constraints (Frontend)
+## Example Output
 
-The `frontend-implementer-prompt.md` injects these rules to prevent ugly AI-generated UI:
+After a successful workflow run, you get:
 
-| Category | Rules |
-|----------|-------|
-| **Typography** | Banned Inter/Roboto/Arial. Use Geist/Outfit/Satoshi. Text color never #000000. |
-| **Color** | Max 1 accent, saturation < 80%. No neon/purple gradients. |
-| **Layout** | No 3 equal columns. Generous whitespace (py-24+). Asymmetric grids. |
-| **Components** | No rounded-full on large elements. No heavy shadows. |
-| **Motion** | Custom cubic-bezier. Respect prefers-reduced-motion. |
-| **Content** | No placeholder names. No em-dashes. Real copy only. |
+```
+docs/agent/requests/REQ-20260609-001/
+├── requirements.md          # What we're building
+├── acceptance.md            # How we verify it
+├── plan.md                  # Task breakdown
+├── state.json               # Machine-readable state
+├── handoff.md               # Checkpoint for resume
+├── implementation.md        # What was built, files changed
+├── review.md                # Spec + code quality findings
+├── verification.md          # Test results, lint output
+└── qa.md                    # Acceptance criteria check
+```
 
-## Risk-Based Subagent Policy
+Every claim is backed by evidence. No "theoretically it should work."
 
-| Risk Level | Implementation | Reviews | Verification | Isolation |
-|------------|---------------|---------|--------------|-----------|
-| `critical` | Required | Spec + Code Quality + UI | Required | worktree |
-| `high` | Required | Spec + Code Quality + UI | Required | worktree |
-| `medium` | Required | Conditional | Required | shared |
+## Comparison with Similar Tools
 
-## Comparison with Aegis & Superpowers
-
-Agent Workflow is inspired by both [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers), but takes a different approach.
-
-### Architecture
+Agent Workflow is inspired by [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers). Here's how they differ:
 
 | | Agent Workflow | Aegis | Superpowers |
 |---|---|---|---|
-| **Core model** | Orchestrator-subagent with strict separation | Baseline-first method pack with risk routing | Composable auto-triggered skills |
-| **Main thread role** | Coordinator only — never touches code | Coordinator with baseline-read phase | Skills auto-trigger based on task |
-| **Subagent dispatch** | SubagentContextPacket (self-contained) | Subagent-driven with baseline context | Subagent-driven, plan-as-junior-engineer |
-| **Risk routing** | 3 levels (critical/high/medium) with escalating isolation | Low/medium/high complexity routing | Uniform process for all tasks |
-| **TDD enforcement** | Optional (project decides) | Risk-adaptive (strict/light/skip) | Strict RED-GREEN-REFACTOR |
+| **Philosophy** | Process discipline via Orchestrator separation | Baseline-first, evidence-driven method pack | Composable auto-triggered skills |
+| **Main thread** | Never touches code | Coordinator with baseline-read phase | Skills auto-trigger |
+| **UI/Frontend** | Built-in design constraints + UI reviewer with AI Slop Score | Not included | Not included |
+| **Setup** | Clone + symlink, zero config | Guided prompt + doctor script | Per-host plugin install |
+| **Best for** | Frontend-heavy projects, Orchestrator discipline | Complex enterprise codebases, risk-adaptive TDD | TDD-first teams, strict process |
 
-### Review & Verification
+For a detailed comparison, see [docs/comparison.md](docs/comparison.md).
 
-| | Agent Workflow | Aegis | Superpowers |
-|---|---|---|---|
-| **Review stages** | Spec compliance → Code quality → UI review | Baseline + two-stage review | Two-stage code review |
-| **UI/Frontend review** | Dedicated UI reviewer with AI Slop Score (0-10) | Not included | Not included |
-| **Design constraints** | Built-in frontend design rules (typography, color, layout, motion) | Not included | Not included |
-| **Completion gate** | Evidence bundle + QA verification | Evidence-gated with residual risk tracking | Evidence over claims |
+### When to use Agent Workflow
 
-### Where Agent Workflow Excels
+- You care about frontend quality and want to eliminate AI slop
+- You want the main thread to stay focused on coordination, not coding
+- You want a simple setup with minimal configuration
+- You want explicit status handling (DONE / BLOCKED / NEEDS_CONTEXT) instead of assumptions
 
-**Frontend-heavy projects.** Agent Workflow is the only one with built-in frontend design constraints and a dedicated UI review stage. If your AI agent generates ugly UI with Inter fonts, neon gradients, and 3-column layouts, Agent Workflow catches it before it ships.
+### When to use something else
 
-**Orchestrator discipline.** The strict "Orchestrator never touches code" rule prevents the common problem where the main thread starts coding instead of delegating. Both Aegis and Superpowers trust the agent more; Agent Workflow trusts the process more.
+- Complex enterprise codebase needing baseline reads before every change → [Aegis](https://github.com/GanyuanRan/Aegis)
+- TDD-first team wanting strict red-green-refactor as non-negotiable discipline → [Superpowers](https://github.com/obra/superpowers)
 
-**Simpler mental model.** Two skills (`init` + `start`), minimal config, no doctor scripts. You clone, symlink, and go.
+## Project Structure
 
-### Where Others Excel
-
-**Aegis** is better for complex enterprise codebases needing baseline reads, risk-adaptive TDD, and multi-host support (15+ agents).
-
-**Superpowers** is better for TDD-first teams that want strict red-green-refactor as non-negotiable discipline.
-
-### When to Use Which
-
-| Scenario | Recommended |
-|----------|-------------|
-| Frontend + backend project with UI quality concerns | **Agent Workflow** |
-| Complex legacy codebase, need baseline before changes | **Aegis** |
-| TDD-first team, want strict red-green-refactor | **Superpowers** |
-| Quick feature with minimal setup overhead | **Agent Workflow** |
-| Need to prevent AI from generating ugly UI | **Agent Workflow** |
+```
+.
+├── skills/
+│   ├── agent-workflow-init/
+│   │   ├── SKILL.md
+│   │   ├── references/agent-workflow-guide.md
+│   │   ├── assets/templates/
+│   │   │   ├── AGENTS.md.template
+│   │   │   └── change-request-template.md
+│   │   └── scripts/
+│   │       ├── init_agent_workflow.py
+│   │       └── install_symlinks.sh
+│   └── agent-workflow-start/
+│       ├── SKILL.md
+│       ├── references/
+│       │   ├── start-guide.md
+│       │   ├── implementer-prompt.md
+│       │   ├── frontend-implementer-prompt.md
+│       │   ├── spec-reviewer-prompt.md
+│       │   ├── code-quality-reviewer-prompt.md
+│       │   ├── ui-reviewer-prompt.md
+│       │   ├── verification-prompt.md
+│       │   └── qa-prompt.md
+│       └── scripts/
+│           └── start_agent_workflow.py
+├── .claude-plugin/plugin.json
+├── .codex-plugin/plugin.json
+├── LICENSE
+└── README.md
+```
 
 ## Inspired By
 
