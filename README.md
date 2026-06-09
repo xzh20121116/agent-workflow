@@ -228,6 +228,84 @@ The `frontend-implementer-prompt.md` injects these rules to prevent ugly AI-gene
 | `high` | Required | Spec + Code Quality + UI | Required | worktree |
 | `medium` | Required | Conditional | Required | shared |
 
+## Comparison with Aegis & Superpowers
+
+Agent Workflow is inspired by both [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers), but takes a different approach. Here's how they compare:
+
+### Architecture
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **Core model** | Orchestrator-subagent with strict separation | Baseline-first method pack with risk routing | Composable auto-triggered skills |
+| **Main thread role** | Coordinator only — never touches code | Coordinator with baseline-read phase | Skills auto-trigger based on task |
+| **Subagent dispatch** | SubagentContextPacket (self-contained) | Subagent-driven with baseline context | Subagent-driven, plan-as-junior-engineer |
+| **Risk routing** | 3 levels (critical/high/medium) with escalating isolation | Low/medium/high complexity routing | Uniform process for all tasks |
+| **TDD enforcement** | Optional (project decides) | Risk-adaptive (strict/light/skip) | Strict RED-GREEN-REFACTOR |
+
+### Review & Verification
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **Review stages** | Spec compliance → Code quality → UI review | Baseline + two-stage review | Two-stage code review |
+| **UI/Frontend review** | Dedicated UI reviewer with AI Slop Score (0-10) | Not included | Not included |
+| **Design constraints** | Built-in frontend design rules (typography, color, layout, motion) | Not included | Not included |
+| **Completion gate** | Evidence bundle + QA verification | Evidence-gated with residual risk tracking | Evidence over claims |
+| **Implementer status** | 4-status return (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED) | Subagent-driven | Plan-driven |
+
+### Frontend Capabilities
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **Frontend task detection** | Auto-detects .tsx/.vue/.html and UI-related keywords | Not included | Not included |
+| **AI-slop detection** | Dedicated UI reviewer checks for Inter font, neon gradients, 3 equal columns, placeholder content | Not included | Not included |
+| **Design system injection** | Typography, color, layout, motion, icon constraints in implementer prompt | Not included | Not included |
+| **Responsive check** | 375px mobile, 768px tablet, 44px touch targets | Not included | Not included |
+
+### Setup & Multi-Host
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **Setup complexity** | `git clone` + symlink, zero config | Guided prompt + `aegis-doctor.py` verification | Per-host plugin install |
+| **Config surface** | Minimal (risk level per request) | Rich (activation mode, TDD mode, host registry) | Minimal |
+| **Supported hosts** | Claude Code, Codex App (universal via SKILL.md) | 15+ hosts (many pending verification) | 7 hosts |
+| **Verification tooling** | Manual (run tests in your project) | `aegis-doctor.py` with JSON health checks | Manual |
+
+### Where Agent Workflow Excels
+
+**Frontend-heavy projects.** Agent Workflow is the only one with built-in frontend design constraints and a dedicated UI review stage. If your AI agent generates ugly UI with Inter fonts, neon gradients, and 3-column layouts, Agent Workflow catches it before it ships.
+
+**Orchestrator discipline.** The strict "Orchestrator never touches code" rule prevents the common problem where the main thread starts coding instead of delegating. Both Aegis and Superpowers trust the agent more; Agent Workflow trusts the process more.
+
+**Simpler mental model.** Two skills (`init` + `start`), minimal config, no doctor scripts. You clone, symlink, and go.
+
+**Implementer status clarity.** The 4-status return (DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED) gives the Orchestrator explicit decision points instead of assuming success.
+
+### Where Others Excel
+
+**Aegis is better for:**
+- Complex enterprise codebases requiring baseline reads before changes
+- Teams that need risk-adaptive TDD (strict for risky, light for simple)
+- Multi-host environments with 15+ different AI coding agents
+- Bug fixes that need dual-track closure (repair + retirement)
+
+**Superpowers is better for:**
+- Teams that want strong TDD enforcement as non-negotiable discipline
+- Projects where uniform process (no risk routing) is a feature, not a limitation
+- Environments with many different host platforms (7 hosts)
+
+### When to Use Which
+
+| Scenario | Recommended |
+|----------|-------------|
+| Frontend + backend project with UI quality concerns | **Agent Workflow** |
+| Complex legacy codebase, need baseline before changes | **Aegis** |
+| TDD-first team, want strict red-green-refactor | **Superpowers** |
+| Quick feature with minimal setup overhead | **Agent Workflow** |
+| Multi-host team (10+ different AI agents) | **Aegis** |
+| Want evidence-gated completion with risk tracking | **Aegis** |
+| Need to prevent AI from generating ugly UI | **Agent Workflow** |
+| Simple composable skills, no workflow overhead | **Superpowers** |
+
 ## Inspired By
 
 - [Aegis](https://github.com/GanyuanRan/Aegis) — baseline-first, evidence-driven method pack for AI coding agents

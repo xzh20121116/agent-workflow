@@ -228,6 +228,84 @@ python skills/agent-workflow-start/scripts/start_agent_workflow.py --project-roo
 └── README.md
 ```
 
+## 与 Aegis、Superpowers 的对比
+
+Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)，但走了一条不同的路。以下是三者的详细对比：
+
+### 架构
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **核心模型** | 编排器-子代理，严格分离 | baseline-first 方法包，按风险路由 | 可组合的自动触发技能 |
+| **主线程角色** | 纯协调者，永远不碰代码 | 协调者 + baseline 读取阶段 | 技能按任务自动触发 |
+| **子代理分发** | SubagentContextPacket（自包含） | 子代理驱动 + baseline 上下文 | 子代理驱动，计划清晰到"初级工程师能执行" |
+| **风险路由** | 3 级（critical/high/medium），逐级升级隔离 | 低/中/高复杂度路由 | 所有任务统一流程 |
+| **TDD 强制** | 可选（项目自行决定） | 风险自适应（严格/轻量/跳过） | 严格的 RED-GREEN-REFACTOR |
+
+### 审查与验证
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **审查阶段** | 规格合规 → 代码质量 → UI 审查 | baseline + 两阶段审查 | 两阶段代码审查 |
+| **UI/前端审查** | 专用 UI 审查，AI Slop Score 0-10 分 | 不包含 | 不包含 |
+| **设计约束** | 内置前端设计规则（排版、配色、布局、动效） | 不包含 | 不包含 |
+| **完成门禁** | 证据包 + QA 验证 | 证据门禁 + 残余风险追踪 | Evidence over claims |
+| **实现者状态** | 四状态返回（DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED） | 子代理驱动 | 计划驱动 |
+
+### 前端能力
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **前端任务检测** | 自动检测 .tsx/.vue/.html 和 UI 相关关键词 | 不包含 | 不包含 |
+| **AI 味检测** | 专用 UI 审查检查 Inter 字体、霓虹渐变、三等分列、占位符内容 | 不包含 | 不包含 |
+| **设计系统注入** | 排版、配色、布局、动效、图标约束写入实现者提示词 | 不包含 | 不包含 |
+| **响应式检查** | 375px 手机、768px 平板、44px 触控目标 | 不包含 | 不包含 |
+
+### 安装与多宿主
+
+| | Agent Workflow | Aegis | Superpowers |
+|---|---|---|---|
+| **安装复杂度** | `git clone` + 符号链接，零配置 | 引导式提示词 + `aegis-doctor.py` 验证 | 逐宿主插件安装 |
+| **配置面** | 极简（每个请求指定风险等级） | 丰富（activation mode、TDD mode、host registry） | 极简 |
+| **支持宿主** | Claude Code、Codex App（通用 via SKILL.md） | 15+ 宿主（多数待验证） | 7 宿主 |
+| **验证工具** | 手动（在项目中跑测试） | `aegis-doctor.py` + JSON 健康检查 | 手动 |
+
+### Agent Workflow 的优势
+
+**前端项目。** Agent Workflow 是三者中唯一内置前端设计约束和 UI 审查阶段的。如果你的 AI 代理生成的 UI 用着 Inter 字体、霓虹渐变和三等分布局，Agent Workflow 能在上线前抓住它。
+
+**编排器纪律。** 严格的"编排器永远不碰代码"规则解决了常见的主线程自己编码而非委派的问题。Aegis 和 Superpowers 更信任代理；Agent Workflow 更信任流程。
+
+**更简单的心智模型。** 两个 skill（`init` + `start`），最小配置，不需要 doctor 脚本。克隆、符号链接、开始用。
+
+**实现者状态清晰。** 四状态返回（DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED）给编排器明确的决策点，而不是假设成功。
+
+### 其他工具的优势
+
+**Aegis 更适合：**
+- 复杂的企业级代码库，改动前需要 baseline 读取
+- 需要风险自适应 TDD 的团队（高风险严格，低风险轻量）
+- 多宿主环境，10+ 种不同的 AI 编程代理
+- Bug 修复需要双轨闭环（修复轨 + 退役轨）
+
+**Superpowers 更适合：**
+- 把 TDD 强制作为不可妥协纪律的团队
+- 统一流程（不按风险路由）是优势而非限制的项目
+- 使用多种宿主平台的环境（7 种宿主）
+
+### 选择指南
+
+| 场景 | 推荐 |
+|------|------|
+| 前端 + 后端项目，关注 UI 质量 | **Agent Workflow** |
+| 复杂遗留代码库，改动前需要 baseline | **Aegis** |
+| TDD 优先团队，要严格的红-绿-重构 | **Superpowers** |
+| 快速实现功能，最小安装开销 | **Agent Workflow** |
+| 多宿主团队（10+ 种不同 AI 代理） | **Aegis** |
+| 需要证据门禁完成 + 风险追踪 | **Aegis** |
+| 需要防止 AI 生成丑陋 UI | **Agent Workflow** |
+| 简单可组合技能，无工作流开销 | **Superpowers** |
+
 ## 致谢
 
 - [Aegis](https://github.com/GanyuanRan/Aegis) — 面向 AI 编程代理的 baseline-first、evidence-driven 工作流方法包
