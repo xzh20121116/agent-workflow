@@ -340,19 +340,42 @@ docs/agent/requests/REQ-20260609-001/
 
 Every claim is backed by evidence. No "theoretically it should work."
 
-## Comparison with Similar Tools
+## Origin Story
 
-Agent Workflow is inspired by [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers). Here's how they differ:
+Agent Workflow wasn't designed in a vacuum. It came from **real daily usage** — hitting the same pain points over and over: AI agents freestyle-coding without understanding requirements, main threads bloating with code + tests + reviews all mixed together, context compression causing goal drift, and frontends that screamed "AI made this."
+
+After building the initial version, the author searched for similar projects and found [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers). Both had valuable ideas:
+
+- **Aegis** brought baseline-first discipline and evidence-gated completion
+- **Superpowers** pioneered composable subagent-driven development
+
+Agent Workflow **absorbed the best of both** and added what was still missing: strict Orchestrator-subagent separation, frontend design constraints, a dedicated UI reviewer, and a zero-config setup. The result is a tool shaped by real-world usage, not theory.
+
+## Comparison with Similar Tools
 
 | | Agent Workflow | Aegis | Superpowers |
 |---|---|---|---|
-| **Philosophy** | Process discipline via Orchestrator separation | Baseline-first, evidence-driven method pack | Composable auto-triggered skills |
-| **Main thread** | Never touches code | Coordinator with baseline-read phase | Skills auto-trigger |
-| **UI/Frontend** | Built-in design constraints + UI reviewer with AI Slop Score | Not included | Not included |
-| **Setup** | Clone + symlink, zero config | Guided prompt + doctor script | Per-host plugin install |
-| **Best for** | Frontend-heavy projects, Orchestrator discipline | Complex enterprise codebases, risk-adaptive TDD | TDD-first teams, strict process |
+| **Origin** | Real-world usage + best ideas from Aegis & Superpowers | Method pack for complex codebases | Composable skills framework |
+| **Philosophy** | Trust the process, not the agent | Baseline-first, evidence-driven | TDD + systematic process |
+| **Main thread** | **Never touches code** — strict Orchestrator separation | Coordinator with baseline-read phase | Skills auto-trigger |
+| **UI/Frontend** | **Built-in design constraints + UI reviewer + AI Slop Score** | Not included | Not included |
+| **Review** | **3-stage**: spec compliance + code quality + UI review | 2-stage: spec + code quality | 2-stage code review |
+| **Implementer status** | **4-status return**: DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED | Subagent-driven | Plan-driven |
+| **Setup** | **Clone + symlink, zero config** | Guided prompt + doctor script | Per-host plugin install |
+| **Context management** | **SubagentContextPacket** isolates each task from conversation history | Baseline context | Plan-as-junior-engineer |
+| **Best for** | **Frontend-heavy projects, Orchestrator discipline, simple setup** | Complex enterprise codebases | TDD-first teams |
 
 For a detailed comparison, see [docs/comparison.md](docs/comparison.md).
+
+### What Agent Workflow does that others don't
+
+**Frontend quality control.** Agent Workflow is the only tool that catches AI-generated UI problems. The UI Reviewer checks typography, color, layout, motion, responsiveness, and accessibility — then scores it with an AI Slop Score (0-10). The frontend implementer also gets design constraints injected into its prompt, preventing the problems before they happen.
+
+**Strict Orchestrator discipline.** Both Aegis and Superpowers allow the main thread to touch code in some scenarios. Agent Workflow enforces a hard rule: the Orchestrator never reads, writes, or reviews code. Every coding task goes to a subagent. This prevents context bloat and goal drift.
+
+**SubagentContextPacket.** Each subagent gets a self-contained context packet — task, goal, files, non-goals, verification. No conversation history leaking in. This means subagents stay focused, and the Orchestrator's context stays clean.
+
+**Zero config.** Two skills, no doctor scripts, no activation modes, no host registry. Clone, symlink, start working.
 
 ### When to use Agent Workflow
 
@@ -360,6 +383,7 @@ For a detailed comparison, see [docs/comparison.md](docs/comparison.md).
 - You want the main thread to stay focused on coordination, not coding
 - You want a simple setup with minimal configuration
 - You want explicit status handling (DONE / BLOCKED / NEEDS_CONTEXT) instead of assumptions
+- You want the best ideas from Aegis and Superpowers without the complexity
 
 ### When to use something else
 

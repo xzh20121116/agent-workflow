@@ -339,19 +339,42 @@ docs/agent/requests/REQ-20260609-001/
 
 每个声明都有证据支撑。没有"理论上应该可以"。
 
-## 与类似工具的对比
+## 项目由来
 
-Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)。以下是核心差异：
+Agent Workflow 不是凭空设计的。它来自**真实的日常使用** — 反复遇到同样的痛点：AI 代理不理解需求就开始乱写代码，主线程又聊天又写代码又跑测试导致上下文膨胀，压缩几次之后目标漂移，前端页面一看就是 AI 做的。
+
+初始版本完成后，作者在网上搜索类似项目，发现了 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)。两者都有宝贵的思想：
+
+- **Aegis** 带来了 baseline-first 纪律和 evidence-gated 完成机制
+- **Superpowers** 开创了可组合的子代理驱动开发
+
+Agent Workflow **吸收了两者的精华**，并补齐了它们没有覆盖的部分：严格的编排器-子代理分离、前端设计约束、专用 UI 审查、零配置安装。最终形成一个由实战驱动、而非理论驱动的工具。
+
+## 与类似工具的对比
 
 | | Agent Workflow | Aegis | Superpowers |
 |---|---|---|---|
-| **理念** | 通过编排器分离实现流程纪律 | baseline-first、evidence-driven 方法包 | 可组合的自动触发技能 |
-| **主线程** | 永远不碰代码 | 协调者 + baseline 读取 | 技能自动触发 |
-| **UI/前端** | 内置设计约束 + UI 审查员 + AI Slop Score | 不包含 | 不包含 |
-| **安装** | clone + symlink，零配置 | 引导式 + doctor 脚本 | 逐宿主插件安装 |
-| **最适合** | 前端项目、编排器纪律 | 复杂企业代码库、风险自适应 TDD | TDD 优先团队 |
+| **由来** | 真实使用场景 + 吸收 Aegis & Superpowers 精华 | 面向复杂代码库的方法包 | 可组合技能框架 |
+| **理念** | 信任流程，不信任代理 | baseline-first、evidence-driven | TDD + 系统化流程 |
+| **主线程** | **永远不碰代码** — 严格编排器分离 | 协调者 + baseline 读取 | 技能自动触发 |
+| **UI/前端** | **内置设计约束 + UI 审查员 + AI Slop Score** | 不包含 | 不包含 |
+| **审查** | **三阶段**：规格合规 + 代码质量 + UI 审查 | 两阶段：规格 + 代码质量 | 两阶段代码审查 |
+| **实现者状态** | **四状态返回**：DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED | 子代理驱动 | 计划驱动 |
+| **安装** | **clone + symlink，零配置** | 引导式 + doctor 脚本 | 逐宿主插件安装 |
+| **上下文管理** | **SubagentContextPacket** 隔离每个任务，不泄漏对话历史 | baseline 上下文 | 计划即初级工程师 |
+| **最适合** | **前端项目、编排器纪律、简单安装** | 复杂企业代码库 | TDD 优先团队 |
 
 详细对比见 [docs/comparison.md](docs/comparison.md)。
+
+### Agent Workflow 独有的优势
+
+**前端质量控制。** 三者中唯一能抓住 AI 生成的 UI 问题。UI 审查员检查排版、配色、布局、动效、响应式、无障碍 — 然后用 AI Slop Score (0-10) 打分。前端实现者的提示词中也会注入设计约束，从源头防止问题。
+
+**严格的编排器纪律。** Aegis 和 Superpowers 在某些场景下允许主线程碰代码。Agent Workflow 执行硬规则：编排器永远不读、不写、不审查代码。所有编码任务都交给子代理。杜绝上下文膨胀和目标漂移。
+
+**SubagentContextPacket。** 每个子代理拿到自包含的上下文包 — 任务、目标、文件、非目标、验证条件。对话历史不泄漏。子代理保持专注，编排器的上下文保持干净。
+
+**零配置。** 两个 skill，不需要 doctor 脚本，不需要 activation mode，不需要 host registry。克隆、符号链接、开始干活。
 
 ### 什么时候用 Agent Workflow
 
@@ -359,6 +382,7 @@ Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 
 - 你希望主线程专注协调，不碰代码
 - 你想要简单的安装和最少的配置
 - 你想要显式的状态处理（DONE / BLOCKED / NEEDS_CONTEXT）而不是假设
+- 你想要 Aegis 和 Superpowers 的精华，但不要它们的复杂度
 
 ### 什么时候用别的
 

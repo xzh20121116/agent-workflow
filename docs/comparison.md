@@ -2,6 +2,15 @@
 
 A detailed comparison of three AI coding agent workflow tools.
 
+## Origin
+
+Agent Workflow came from **real daily usage** — the author hit the same pain points repeatedly: AI agents freestyle-coding, main thread context bloat, goal drift after compression, ugly AI-generated UI. After building the initial version, the author found [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers) and absorbed their best ideas:
+
+- **Aegis** → baseline-first discipline, evidence-gated completion, risk routing
+- **Superpowers** → composable subagent-driven development, two-stage review
+
+Agent Workflow combined these with what was still missing: strict Orchestrator separation, frontend design constraints, a dedicated UI reviewer, and zero-config setup.
+
 ## Overview
 
 | | Agent Workflow | Aegis | Superpowers |
@@ -9,6 +18,7 @@ A detailed comparison of three AI coding agent workflow tools.
 | **Repo** | [xzh20121116/agent-workflow](https://github.com/xzh20121116/agent-workflow) | [GanyuanRan/Aegis](https://github.com/GanyuanRan/Aegis) | [obra/superpowers](https://github.com/obra/superpowers) |
 | **Core model** | Orchestrator-subagent with strict separation | Baseline-first method pack with risk routing | Composable auto-triggered skills |
 | **Philosophy** | Trust the process, not the agent | Evidence before claims, baseline before code | TDD + systematic process + complexity reduction |
+| **Unique strength** | **Frontend quality + Orchestrator discipline + simplicity** | Baseline reads + risk-adaptive TDD | Strict TDD enforcement |
 
 ## Architecture
 
@@ -51,15 +61,21 @@ A detailed comparison of three AI coding agent workflow tools.
 
 ## Where Each Tool Excels
 
-### Agent Workflow
+### Agent Workflow — The Best of Both, Plus What's Missing
 
-**Frontend-heavy projects.** The only tool with built-in frontend design constraints and a dedicated UI review stage. If your AI agent generates ugly UI with Inter fonts, neon gradients, and 3-column layouts, Agent Workflow catches it before it ships.
+Agent Workflow was built by absorbing the best ideas from Aegis and Superpowers, then adding capabilities neither had:
 
-**Orchestrator discipline.** The strict "Orchestrator never touches code" rule prevents the common problem where the main thread starts coding instead of delegating.
+**Frontend quality control (unique).** No other tool catches AI-generated UI problems. The UI Reviewer checks typography, color, layout, motion, responsiveness, and accessibility — then scores it with an AI Slop Score (0-10). The frontend implementer also gets design constraints injected into its prompt, preventing problems before they happen.
 
-**Simpler mental model.** Two skills (`init` + `start`), minimal config, no doctor scripts.
+**Strict Orchestrator discipline (stronger than Aegis/Superpowers).** Both Aegis and Superpowers allow the main thread to touch code in some scenarios. Agent Workflow enforces a hard rule: the Orchestrator never reads, writes, or reviews code. This prevents context bloat and goal drift — the two most common failure modes of AI coding agents on complex tasks.
 
-**Implementer status clarity.** The 4-status return gives the Orchestrator explicit decision points instead of assuming success.
+**SubagentContextPacket (unique design).** Each subagent gets a self-contained context packet — task, goal, files, non-goals, verification. No conversation history leaking in. This means subagents stay focused and the Orchestrator's context stays clean, even on long-running tasks.
+
+**4-status implementer return (unique).** DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED gives the Orchestrator explicit decision points. The implementer can flag concerns without blocking, request more context when needed, or declare a blocker — instead of just saying "done" and hoping for the best.
+
+**Zero config (simplest setup).** Two skills, no doctor scripts, no activation modes, no host registry. Clone, symlink, start working.
+
+**3-stage review (most thorough).** Spec compliance → Code quality → UI review. Other tools have 2 stages. The extra UI stage catches visual problems that code review simply cannot detect.
 
 ### Aegis
 
@@ -81,16 +97,17 @@ A detailed comparison of three AI coding agent workflow tools.
 
 ## When to Use Which
 
-| Scenario | Recommended |
-|----------|-------------|
-| Frontend + backend project with UI quality concerns | **Agent Workflow** |
-| Complex legacy codebase, need baseline before changes | **Aegis** |
-| TDD-first team, want strict red-green-refactor | **Superpowers** |
-| Quick feature with minimal setup overhead | **Agent Workflow** |
-| Multi-host team (10+ different AI agents) | **Aegis** |
-| Want evidence-gated completion with risk tracking | **Aegis** |
-| Need to prevent AI from generating ugly UI | **Agent Workflow** |
-| Simple composable skills, no workflow overhead | **Superpowers** |
+| Scenario | Recommended | Why |
+|----------|-------------|-----|
+| Frontend + backend project with UI quality concerns | **Agent Workflow** | Only tool with UI reviewer + design constraints |
+| Complex legacy codebase, need baseline before changes | **Aegis** | Baseline-read discipline prevents blind changes |
+| TDD-first team, want strict red-green-refactor | **Superpowers** | Strict TDD enforcement, no compromises |
+| Quick feature with minimal setup overhead | **Agent Workflow** | Zero config, two skills, clone and go |
+| Multi-host team (10+ different AI agents) | **Aegis** | Widest host support (15+ hosts) |
+| Want evidence-gated completion with risk tracking | **Agent Workflow** or **Aegis** | Both have evidence gates; Agent Workflow adds UI evidence |
+| Need to prevent AI from generating ugly UI | **Agent Workflow** | Only tool addressing frontend quality |
+| Want the best ideas from all three tools | **Agent Workflow** | Combines Aegis's evidence discipline + Superpowers's subagent model + own frontend layer |
+| Simple composable skills, no workflow overhead | **Superpowers** | Lightest weight, auto-trigger model |
 
 ## Can They Work Together?
 
