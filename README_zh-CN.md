@@ -91,12 +91,7 @@ requirement_clarification  （编排器与用户对话）
 
 ```text
 请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
-识别我当前使用的 AI 编程宿主（Claude Code、Codex App 或其他），将 skills 目录下的
-agent-workflow-init 和 agent-workflow-start 安装到宿主的 skill 发现路径。
-如果需要重启或重新加载宿主，请明确告诉我。
 ```
-
-代理会自动识别你的宿主、克隆仓库、配置路径并验证安装。
 
 ## 使用
 
