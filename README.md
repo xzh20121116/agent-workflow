@@ -87,77 +87,44 @@ requirement_clarification  (Orchestrator talks to user)
 
 ## Installation
 
-### Claude Code
+Paste this to your AI coding agent:
 
-```bash
-# Clone to skills directory
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.claude/skills/agent-workflow
-
-# Or symlink from a central location
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.claude/skills/agent-workflow-init
-ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workflow-start
+```text
+请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
+识别我当前使用的 AI 编程宿主（Claude Code、Codex App 或其他），将 skills 目录下的
+agent-workflow-init 和 agent-workflow-start 安装到宿主的 skill 发现路径。
+如果需要重启或重新加载宿主，请明确告诉我。
 ```
 
-### Codex App
-
-```bash
-# Clone to skills directory
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.codex/skills/agent-workflow
-
-# Or symlink
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.codex/skills/agent-workflow-init
-ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workflow-start
-```
-
-### Universal (any host)
-
-```bash
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-
-# Then symlink or copy the skills to your host's skill directory
-# Claude Code: ~/.claude/skills/
-# Codex: ~/.codex/skills/
-# Others: check your host's skill discovery path
-```
+The agent will automatically detect your host, clone the repo, set up the correct paths, and verify the installation.
 
 ## Usage
 
 ### 1. Initialize a project
 
-```
-/agent-workflow-init
+After installation, tell your agent:
+
+```text
+帮我用 agent-workflow 初始化当前项目
 ```
 
-Or explicitly:
-
-```bash
-python skills/agent-workflow-init/scripts/init_agent_workflow.py --project-root .
-```
+Or use the skill directly: `/agent-workflow-init`
 
 ### 2. Start a request
 
-```
+```text
 用重任务流程处理：用户个人中心增加修改手机号功能
 ```
 
-Or explicitly:
-
-```bash
-python skills/agent-workflow-start/scripts/start_agent_workflow.py --project-root . --title "修改手机号功能" --risk-level medium
-```
+The Orchestrator will clarify requirements, write acceptance criteria, get your confirmation, then automatically delegate to subagents through the full stage flow.
 
 ### 3. Frontend tasks (with design constraints)
 
-```
+```text
 用重任务流程美化 src/pages/profile/index.tsx 页面
 ```
 
-Frontend tasks automatically:
-- Use `frontend-implementer-prompt.md` with design constraints
-- Add a UI review stage after code quality review
-- Check for AI-slop patterns (Inter font, neon gradients, 3 equal columns, etc.)
+Frontend tasks automatically get design constraints and a UI review stage — no extra setup needed.
 
 ## Subagent Prompt Templates
 

@@ -87,77 +87,44 @@ requirement_clarification  （编排器与用户对话）
 
 ## 安装
 
-### Claude Code
+把下面这段话交给你的 AI 编程代理：
 
-```bash
-# 克隆到 skills 目录
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.claude/skills/agent-workflow
-
-# 或者从统一位置创建符号链接
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.claude/skills/agent-workflow-init
-ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workflow-start
+```text
+请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
+识别我当前使用的 AI 编程宿主（Claude Code、Codex App 或其他），将 skills 目录下的
+agent-workflow-init 和 agent-workflow-start 安装到宿主的 skill 发现路径。
+如果需要重启或重新加载宿主，请明确告诉我。
 ```
 
-### Codex App
-
-```bash
-# 克隆到 skills 目录
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.codex/skills/agent-workflow
-
-# 或者符号链接
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.codex/skills/agent-workflow-init
-ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workflow-start
-```
-
-### 通用（任意宿主）
-
-```bash
-git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
-
-# 然后将 skills 符号链接或复制到你的宿主 skills 目录
-# Claude Code: ~/.claude/skills/
-# Codex: ~/.codex/skills/
-# 其他: 查看你宿主的 skill 发现路径
-```
+代理会自动识别你的宿主、克隆仓库、配置路径并验证安装。
 
 ## 使用
 
 ### 1. 初始化项目
 
-```
-/agent-workflow-init
+安装完成后，告诉你的代理：
+
+```text
+帮我用 agent-workflow 初始化当前项目
 ```
 
-或显式调用：
-
-```bash
-python skills/agent-workflow-init/scripts/init_agent_workflow.py --project-root .
-```
+或直接使用技能：`/agent-workflow-init`
 
 ### 2. 发起需求
 
-```
+```text
 用重任务流程处理：用户个人中心增加修改手机号功能
 ```
 
-或显式调用：
-
-```bash
-python skills/agent-workflow-start/scripts/start_agent_workflow.py --project-root . --title "修改手机号功能" --risk-level medium
-```
+编排器会自动澄清需求、写验收标准、等你确认，然后委派子代理走完整个阶段流程。
 
 ### 3. 前端任务（带设计约束）
 
-```
+```text
 用重任务流程美化 src/pages/profile/index.tsx 页面
 ```
 
-前端任务会自动：
-- 使用 `frontend-implementer-prompt.md`（包含设计约束）
-- 在代码质量审查后增加 UI 审查阶段
-- 检查 AI 味道（Inter 字体、霓虹渐变、三等分列等）
+前端任务会自动获得设计约束和 UI 审查阶段，无需额外配置。
 
 ## 子代理提示词模板
 
