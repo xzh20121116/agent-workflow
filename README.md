@@ -186,41 +186,18 @@ graph TD
 | `qa` | Subagent | Verifies every acceptance criterion against code |
 | `final_handoff` | Orchestrator | Reports results with evidence bundle |
 
-## The UI Reviewer: Killing AI Slop
-
-AI-generated frontends have a distinctive look: Inter font everywhere, purple-blue gradients, 3 equal columns, heavy shadows, placeholder content. We call this **AI slop**.
-
-The UI Reviewer is a dedicated subagent that catches what code review misses:
-
-```mermaid
-graph LR
-    UI["UI Reviewer"] --> T["Typography<br/>No Inter/Roboto<br/>No #000000 text"]
-    UI --> C["Color<br/>No neon gradients<br/>Max 1 accent"]
-    UI --> L["Layout<br/>No 3 equal columns<br/>Generous whitespace"]
-    UI --> M["Motion<br/>Custom cubic-bezier<br/>Respect reduced-motion"]
-    UI --> R["Responsive<br/>375px mobile<br/>44px touch targets"]
-    UI --> A["Accessibility<br/>WCAG AA contrast<br/>Focus states"]
-
-    style UI fill:#EC4899,stroke:#DB2777,color:#fff
-```
-
-It outputs an **AI Slop Score (0-10)**: 0 = looks handcrafted, 10 = maximum AI slop.
-
-The frontend implementer also gets **design constraints injected into its prompt**: typography rules, color palette limits, layout patterns, motion guidelines, icon choices, and content rules (no placeholder names, no em-dashes, real copy only).
-
 ## Key Features
 
 | Feature | What it does |
 |---------|-------------|
 | **Orchestrator-subagent separation** | Main thread coordinates, subagents execute. The Orchestrator never writes code. |
 | **SubagentContextPacket** | Self-contained prompts with task, goal, files, non-goals, verification. No conversation history leaking. |
-| **Two-stage review** | Spec compliance (did you build the right thing?) + code quality (did you build it well?) |
-| **UI review** | AI Slop Score (0-10), responsive check, accessibility audit, design constraint enforcement |
-| **Frontend design constraints** | Typography, color, layout, motion rules injected into implementation prompts |
 | **Implementer 4-status return** | `DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — Orchestrator handles each |
+| **3-stage review** | Spec compliance + code quality + UI review (frontend tasks) |
 | **Checkpoint & resume** | Survives context resets via handoff.md. Never resumes from memory alone. |
 | **Drift detection** | After each stage, verifies work still serves original intent |
 | **Risk-based isolation** | High-risk tasks use git worktree isolation; medium-risk shares working directory |
+| **Frontend design constraints** | Typography, color, layout, motion rules injected into implementer prompts (bonus for frontend tasks) |
 
 ## Quick Start
 
@@ -340,7 +317,7 @@ Every claim is backed by evidence. No "theoretically it should work."
 
 ## Origin Story
 
-Agent Workflow came from **real daily usage** — hitting the same pain points over and over: AI agents freestyle-coding without understanding requirements, main threads bloating with code + tests + reviews all mixed together, context compression causing goal drift, and frontends that screamed "AI made this."
+Agent Workflow came from **real daily usage** — hitting the same pain points over and over: AI agents freestyle-coding without understanding requirements, main threads bloating with code + tests + reviews all mixed together, context compression causing goal drift.
 
 After building the initial version, the author found [Aegis](https://github.com/GanyuanRan/Aegis) and [Superpowers](https://github.com/obra/superpowers). Both had valuable ideas. Agent Workflow **absorbed the best of both** and added what was still missing.
 
@@ -349,46 +326,60 @@ After building the initial version, the author found [Aegis](https://github.com/
 | | Agent Workflow | Aegis | Superpowers |
 |---|---|---|---|
 | **Main thread** | **Never touches code** | Coordinator + baseline | Auto-trigger |
-| **UI/Frontend** | **Design constraints + UI reviewer + AI Slop Score** | -- | -- |
 | **Review** | **3-stage** (spec + quality + UI) | 2-stage | 2-stage |
 | **Implementer** | **4-status return** | Subagent-driven | Plan-driven |
 | **Context** | **SubagentContextPacket** (isolated) | Baseline context | Plan-as-junior |
+| **Frontend** | Design constraints + UI reviewer | -- | -- |
 | **Setup** | **Zero config** | Doctor script | Per-host plugin |
-| **Best for** | **Frontend + discipline + simplicity** | Enterprise baseline | TDD teams |
 
-### Why Agent Workflow wins on frontend projects
+### Core advantage: Orchestrator discipline
 
-AI-generated frontends have a distinctive "plastic look" — Inter font, purple gradients, 3 equal columns, heavy shadows. **No other tool addresses this.**
+The #1 failure mode of AI coding agents on complex tasks: **the main thread does everything** — chatting, coding, testing, reviewing — all in one bloated context. Then context gets compressed, goals get lost, behavior drifts.
 
-Agent Workflow fights it on two fronts:
+Agent Workflow enforces a hard rule: **the Orchestrator never reads, writes, or reviews code.** Every coding task goes to a subagent with a self-contained context packet. The Orchestrator's context stays clean. The subagent stays focused. No leaking.
 
-1. **Prevention** — The frontend implementer's prompt is injected with design constraints: typography rules, color palette limits, layout patterns, motion guidelines, icon choices, content rules
-2. **Detection** — A dedicated UI Reviewer checks typography, color, layout, motion, responsiveness, and accessibility, then scores it with an **AI Slop Score (0-10)**
+Aegis and Superpowers allow the main thread to touch code in some scenarios. Agent Workflow doesn't. This isn't about trust — it's about discipline.
 
-### Why Agent Workflow wins on context management
+This applies to **all task types**: backend APIs, database migrations, refactoring, bug fixes, infrastructure changes, and yes, frontend too.
 
-The #1 failure mode of AI coding agents on complex tasks: **context bloat → goal drift → amnesia**.
+### Core advantage: SubagentContextPacket
 
-Agent Workflow solves this with strict Orchestrator separation + SubagentContextPacket:
+Each subagent gets a self-contained context packet:
 
-- The Orchestrator never reads code, never writes code, never runs tests — its context stays clean
-- Each subagent gets a self-contained packet (task, goal, files, non-goals, verification) — no conversation history leaking in
-- After each stage, a checkpoint is written to `handoff.md` — context resets don't lose progress
+- **Task:** what to do
+- **Goal:** success condition
+- **Relevant files:** explicit file list
+- **Non-goals:** what NOT to do
+- **Verification:** how to confirm success
 
-Aegis and Superpowers allow the main thread to touch code in some scenarios. Agent Workflow enforces a hard rule: **if it touches code, it's a subagent.**
+No conversation history leaking in. No context bloat. The subagent does its job and returns evidence.
 
-### Why Agent Workflow wins on simplicity
+### Core advantage: 3-stage review
 
-Two skills. Zero config. No doctor scripts. No activation modes. No host registry. No host compatibility matrix.
+Other tools have 2-stage review. Agent Workflow has 3:
+
+1. **Spec compliance** — Did you build the right thing? (reads actual code, compares to requirements)
+2. **Code quality** — Did you build it well? (structure, correctness, maintainability)
+3. **UI review** — Does it look right? (for frontend tasks: typography, layout, responsiveness, accessibility)
+
+The first two apply to **every task**. The third is a bonus for frontend work.
+
+### Bonus: Frontend quality control
+
+AI-generated frontends have a distinctive "plastic look." Agent Workflow is the only tool that addresses this — through design constraints injected into implementer prompts and a dedicated UI Reviewer with AI Slop Score (0-10). But this is one feature among many, not the core value proposition.
+
+### Why simplicity wins
+
+Two skills. Zero config. No doctor scripts. No activation modes. No host registry.
 
 Clone, symlink, start working.
 
 ### When Agent Workflow is the right choice
 
-- You care about frontend quality and want to eliminate AI slop
 - You want the main thread to stay focused on coordination, not coding
-- You want a simple setup with minimal configuration
 - You want explicit status handling (DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED)
+- You want self-contained subagent execution with no context leaking
+- You want a simple setup with minimal configuration
 - You want the best ideas from Aegis and Superpowers without the complexity
 
 ### When to use something else
