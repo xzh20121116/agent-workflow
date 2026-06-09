@@ -23,16 +23,188 @@
 
 ---
 
-## 为什么需要 Agent Workflow
+## 你遇到过这些问题吗？
 
-AI 代理面对复杂任务时，常常会：
+你给 AI 代理一个任务："用户个人中心增加修改手机号功能"。然后：
 
-- 事事亲力亲为，不会委派
-- 需求澄清后就停下来，不会继续推进
-- 生成丑陋、通用的 UI，充满明显的 AI 味
-- 跳过验证就声称完成
+- 它不问清楚就开始写代码，结果漏了旧手机号验证
+- 后端写完了，前端表单忘做了
+- 生成的 UI 满屏 Inter 字体 + 紫色渐变 + 三等分卡片，一看就是 AI 味
+- 跑都没跑就说"已完成"，你一追问又从头来
+- 上下文一长就"失忆"，之前讨论的全忘了
 
-Agent Workflow 通过将主线程变成**编排器（Orchestrator）**来解决这些问题。编排器只做三件事：与用户对话、管理状态、委派工作给专门的子代理。它永远不直接碰代码。
+**Agent Workflow 就是为了解决这些问题。** 它把主线程变成一个编排器（Orchestrator），只跟你对话、管状态、派活。代码？子代理写。测试？子代理跑。审查？子代理审。编排器自己一行代码都不碰。
+
+## 实际场景演示
+
+### 场景 1：全栈功能 —— "加个修改手机号"
+
+你说：
+
+```text
+用重任务流程处理：用户个人中心增加修改手机号功能
+```
+
+**接下来发生的事：**
+
+```
+编排器: "需要支持哪些验证方式？短信验证码还是邮箱验证码？"
+你:     "短信验证码"
+编排器: "旧手机号需要先验证吗？"
+你:     "需要"
+编排器: "新手机号需要二次确认吗？"
+你:     "要，输入两次"
+编排器: "发送频率有限制吗？"
+你:     "60 秒冷却"
+
+── 编排器写 requirements.md，你确认 ──
+── 编排器写 acceptance.md，你确认 ──
+── 编排器写 plan.md ──
+
+── 委派【实现子代理】──
+   子代理读取计划，实现后端 API + 前端表单
+   返回：DONE（修改 4 个文件，测试通过）
+
+── 委派【规格合规审查】──
+   审查员读实际代码，逐条对比需求
+   结果：PASS — 需求全部覆盖
+
+── 委派【代码质量审查】──
+   审查员检查结构、错误处理、代码规范
+   结果：PASS — 1 个建议（非阻塞）
+
+── 委派【验证子代理】──
+   跑测试、lint、构建
+   结果：PASS — 12 个测试，0 失败
+
+── 委派【QA 子代理】──
+   逐条验证验收标准
+   结果：PASS — 8 条标准全部满足
+
+编排器: "完成。修改手机号功能已实现：
+- 短信验证码验证
+- 旧手机号验证
+- 新手机号二次确认
+- 60 秒重发倒计时
+共修改 4 个文件，通过 12 个测试。"
+```
+
+你全程只回答了 4 个问题。从需求到上线，代码一行没碰。
+
+### 场景 2：前端美化 —— "这个页面太丑了"
+
+你说：
+
+```text
+用重任务流程美化 src/pages/landing/index.tsx 页面
+```
+
+**编排器自动识别这是前端任务：**
+
+```
+── 委派【前端实现子代理】（带设计约束）──
+   子代理按设计规范实现：
+   - 字体：Geist Sans，禁用 Inter
+   - 配色：暖灰 #2F3437，单一强调色 #3B82F6
+   - 布局：非对称网格，py-28 留白，禁用三等分列
+   - 动效：cubic-bezier(0.16,1,0.3,1)，尊重 reduced-motion
+   返回：DONE（修改 3 个文件）
+
+── 规格合规 + 代码质量审查通过 ──
+
+── 委派【UI 审查员】──
+   AI Slop Score：2/10（之前是 8/10）
+   ✓ 没有禁用字体
+   ✓ 没有霓虹渐变
+   ✓ 没有三等分列
+   ✓ 手机端响应式正常
+   ✓ 颜色对比度 WCAG AA 达标
+   结果：PASS
+```
+
+UI 审查员能抓住代码审查发现不了的问题：丑字体、通用布局、AI 味道。
+
+### 场景 3：Bug 修复 —— "支付回调偶发失败"
+
+你说：
+
+```text
+用重任务流程处理：支付回调偶发失败，大概一天出现几次
+```
+
+**编排器先排查：**
+
+```
+编排器: "回调失败时有错误日志吗？"
+你:     "有，显示 timeout"
+编排器: "第三方支付平台的超时设置是多少？"
+你:     "5 秒"
+编排器: "我们的回调处理平均耗时？"
+你:     "不确定，但有数据库写入操作"
+
+── 编排器写需求：定位根因 + 修复 ──
+
+── 委派【实现子代理】调查 ──
+   发现：回调处理同步写数据库，负载高时偶尔超过 5 秒
+   修复：异步写入 + 先返回成功 + 幂等校验
+   返回：DONE_WITH_CONCERNS
+     "注意：异步写入意味着回调返回成功时数据库还没更新。
+      需要确认幂等性是否足够。"
+
+编排器读取顾虑，认为合理，把幂等校验加入需求
+
+── 重新委派实现子代理 ──
+   返回：DONE
+
+── 审查、验证、QA 全部通过 ──
+```
+
+`DONE_WITH_CONCERNS` 状态让子代理可以提出疑虑而不阻塞流程。编排器决定是否处理。
+
+### 场景 4：代码重构 —— "这个文件 800 行太臃肿了"
+
+你说：
+
+```text
+用重任务流程重构 src/services/order.service.ts，太臃肿了
+```
+
+**编排器确认方向：**
+
+```
+编排器: "拆分目标是什么？按业务领域还是技术层次？"
+你:     "按业务领域，把订单、支付、通知拆开"
+编排器: "现有测试覆盖情况？"
+你:     "有单元测试，覆盖率约 60%"
+
+── 编排器写计划：拆成 3 个服务 + 共享类型 ──
+
+── 委派【实现子代理】（在 worktree 中隔离工作）──
+   将 order.service.ts 拆分为：
+   - order.service.ts（订单 CRUD）
+   - payment.service.ts（支付处理）
+   - notification.service.ts（邮件/短信/webhook）
+   - shared/types.ts（公共类型）
+   返回：DONE（删除 1 个文件，创建 4 个文件）
+
+── 规格合规审查 ──
+   检查：原文件的所有函数是否仍然可用？
+   结果：PASS — 公共 API 不变
+
+── 代码质量审查 ──
+   检查：边界清晰？循环依赖？
+   结果：PASS — 分离干净
+
+── 验证子代理 ──
+   用原有测试跑重构后的代码
+   结果：PASS — 24 个测试全部通过
+
+── QA 子代理 ──
+   验证：外部调用方无破坏性变更
+   结果：PASS
+```
+
+高风险任务自动使用 **worktree 隔离** —— 重构在独立分支中进行，验证通过前不会碰你的工作目录。
 
 ## 核心架构
 
@@ -93,34 +265,6 @@ requirement_clarification  （编排器与用户对话）
 请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
 ```
 
-## 使用
-
-### 1. 初始化项目
-
-安装完成后，告诉你的代理：
-
-```text
-帮我用 agent-workflow 初始化当前项目
-```
-
-或直接使用技能：`/agent-workflow-init`
-
-### 2. 发起需求
-
-```text
-用重任务流程处理：用户个人中心增加修改手机号功能
-```
-
-编排器会自动澄清需求、写验收标准、等你确认，然后委派子代理走完整个阶段流程。
-
-### 3. 前端任务（带设计约束）
-
-```text
-用重任务流程美化 src/pages/profile/index.tsx 页面
-```
-
-前端任务会自动获得设计约束和 UI 审查阶段，无需额外配置。
-
 ## 子代理提示词模板
 
 每个角色都有专用的提示词模板，位于 `skills/agent-workflow-start/references/`：
@@ -156,43 +300,9 @@ requirement_clarification  （编排器与用户对话）
 | `high` | 必须 | 规格 + 质量 + UI | 必须 | worktree |
 | `medium` | 必须 | 按需 | 必须 | 共享 |
 
-## 项目结构
-
-```
-.
-├── skills/
-│   ├── agent-workflow-init/          # 项目级初始化器
-│   │   ├── SKILL.md
-│   │   ├── references/
-│   │   │   └── agent-workflow-guide.md
-│   │   ├── assets/templates/
-│   │   │   ├── AGENTS.md.template
-│   │   │   └── change-request-template.md
-│   │   └── scripts/
-│   │       ├── init_agent_workflow.py
-│   │       └── install_symlinks.sh
-│   └── agent-workflow-start/         # 需求级入口
-│       ├── SKILL.md
-│       ├── references/
-│       │   ├── start-guide.md
-│       │   ├── implementer-prompt.md
-│       │   ├── frontend-implementer-prompt.md
-│       │   ├── spec-reviewer-prompt.md
-│       │   ├── code-quality-reviewer-prompt.md
-│       │   ├── ui-reviewer-prompt.md
-│       │   ├── verification-prompt.md
-│       │   └── qa-prompt.md
-│       └── scripts/
-│           └── start_agent_workflow.py
-├── .claude-plugin/plugin.json
-├── .codex-plugin/plugin.json
-├── LICENSE
-└── README.md
-```
-
 ## 与 Aegis、Superpowers 的对比
 
-Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)，但走了一条不同的路。以下是三者的详细对比：
+Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)，但走了一条不同的路。
 
 ### 架构
 
@@ -212,48 +322,20 @@ Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 
 | **UI/前端审查** | 专用 UI 审查，AI Slop Score 0-10 分 | 不包含 | 不包含 |
 | **设计约束** | 内置前端设计规则（排版、配色、布局、动效） | 不包含 | 不包含 |
 | **完成门禁** | 证据包 + QA 验证 | 证据门禁 + 残余风险追踪 | Evidence over claims |
-| **实现者状态** | 四状态返回（DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED） | 子代理驱动 | 计划驱动 |
-
-### 前端能力
-
-| | Agent Workflow | Aegis | Superpowers |
-|---|---|---|---|
-| **前端任务检测** | 自动检测 .tsx/.vue/.html 和 UI 相关关键词 | 不包含 | 不包含 |
-| **AI 味检测** | 专用 UI 审查检查 Inter 字体、霓虹渐变、三等分列、占位符内容 | 不包含 | 不包含 |
-| **设计系统注入** | 排版、配色、布局、动效、图标约束写入实现者提示词 | 不包含 | 不包含 |
-| **响应式检查** | 375px 手机、768px 平板、44px 触控目标 | 不包含 | 不包含 |
-
-### 安装与多宿主
-
-| | Agent Workflow | Aegis | Superpowers |
-|---|---|---|---|
-| **安装复杂度** | `git clone` + 符号链接，零配置 | 引导式提示词 + `aegis-doctor.py` 验证 | 逐宿主插件安装 |
-| **配置面** | 极简（每个请求指定风险等级） | 丰富（activation mode、TDD mode、host registry） | 极简 |
-| **支持宿主** | Claude Code、Codex App（通用 via SKILL.md） | 15+ 宿主（多数待验证） | 7 宿主 |
-| **验证工具** | 手动（在项目中跑测试） | `aegis-doctor.py` + JSON 健康检查 | 手动 |
 
 ### Agent Workflow 的优势
 
-**前端项目。** Agent Workflow 是三者中唯一内置前端设计约束和 UI 审查阶段的。如果你的 AI 代理生成的 UI 用着 Inter 字体、霓虹渐变和三等分布局，Agent Workflow 能在上线前抓住它。
+**前端项目。** 三者中唯一内置前端设计约束和 UI 审查阶段的。AI 代理生成的 Inter 字体 + 霓虹渐变 + 三等分布局，能在上线前抓住。
 
-**编排器纪律。** 严格的"编排器永远不碰代码"规则解决了常见的主线程自己编码而非委派的问题。Aegis 和 Superpowers 更信任代理；Agent Workflow 更信任流程。
+**编排器纪律。** 严格的"编排器永远不碰代码"规则。Aegis 和 Superpowers 更信任代理；Agent Workflow 更信任流程。
 
-**更简单的心智模型。** 两个 skill（`init` + `start`），最小配置，不需要 doctor 脚本。克隆、符号链接、开始用。
-
-**实现者状态清晰。** 四状态返回（DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED）给编排器明确的决策点，而不是假设成功。
+**更简单的心智模型。** 两个 skill，最小配置，不需要 doctor 脚本。
 
 ### 其他工具的优势
 
-**Aegis 更适合：**
-- 复杂的企业级代码库，改动前需要 baseline 读取
-- 需要风险自适应 TDD 的团队（高风险严格，低风险轻量）
-- 多宿主环境，10+ 种不同的 AI 编程代理
-- Bug 修复需要双轨闭环（修复轨 + 退役轨）
+**Aegis** 更适合复杂企业级代码库（需要 baseline 读取）、风险自适应 TDD、多宿主环境（15+ 种代理）。
 
-**Superpowers 更适合：**
-- 把 TDD 强制作为不可妥协纪律的团队
-- 统一流程（不按风险路由）是优势而非限制的项目
-- 使用多种宿主平台的环境（7 种宿主）
+**Superpowers** 更适合 TDD 优先团队，把红-绿-重构作为不可妥协的纪律。
 
 ### 选择指南
 
@@ -263,10 +345,7 @@ Agent Workflow 的灵感来自 [Aegis](https://github.com/GanyuanRan/Aegis) 和 
 | 复杂遗留代码库，改动前需要 baseline | **Aegis** |
 | TDD 优先团队，要严格的红-绿-重构 | **Superpowers** |
 | 快速实现功能，最小安装开销 | **Agent Workflow** |
-| 多宿主团队（10+ 种不同 AI 代理） | **Aegis** |
-| 需要证据门禁完成 + 风险追踪 | **Aegis** |
 | 需要防止 AI 生成丑陋 UI | **Agent Workflow** |
-| 简单可组合技能，无工作流开销 | **Superpowers** |
 
 ## 致谢
 
