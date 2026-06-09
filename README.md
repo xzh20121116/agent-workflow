@@ -29,10 +29,10 @@ The Orchestrator **never** touches code directly. Every coding task goes to an i
 
 ```bash
 # Clone to skills directory
-git clone https://github.com/YOUR_USERNAME/agent-workflow.git ~/.claude/skills/agent-workflow
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.claude/skills/agent-workflow
 
 # Or symlink from a central location
-git clone https://github.com/YOUR_USERNAME/agent-workflow.git ~/.agent-workflow
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
 ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.claude/skills/agent-workflow-init
 ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workflow-start
 ```
@@ -41,10 +41,10 @@ ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workf
 
 ```bash
 # Clone to skills directory
-git clone https://github.com/YOUR_USERNAME/agent-workflow.git ~/.codex/skills/agent-workflow
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.codex/skills/agent-workflow
 
 # Or symlink
-git clone https://github.com/YOUR_USERNAME/agent-workflow.git ~/.agent-workflow
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
 ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.codex/skills/agent-workflow-init
 ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workflow-start
 ```
@@ -52,7 +52,7 @@ ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workfl
 ### Universal (any host)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/agent-workflow.git ~/.agent-workflow
+git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
 
 # Then symlink or copy the skills to your host's skill directory
 # Claude Code: ~/.claude/skills/
