@@ -35,61 +35,57 @@ AI coding agents are powerful. But give them a complex task and watch what happe
 - The main thread does everything — chatting, coding, testing, reviewing — all in one bloated context
 - Context gets compressed, goals get lost, behavior drifts
 - They say "done" without running a single test
-- The frontend looks like every other AI-generated page: Inter font, purple gradient, 3 equal columns
 - You ask "did you test the error case?" and they start over from scratch
 
 **Agent Workflow fixes this** by adding one constraint: **the main thread never touches code.**
-
-It becomes an Orchestrator — a project manager that talks to you, clarifies requirements, delegates to specialized subagents, and delivers results with evidence. Every coding, testing, and review task goes to an independent subagent with a self-contained context packet. No conversation history leaking. No context bloat. No drift.
 
 ## Before / After
 
 ### Without Agent Workflow
 
 ```
-User:  给个人中心加手机号修改功能
-AI:    好的，我来改几个文件
-AI:    [修改了 6 个文件]
-AI:    已完成
-User:  测了吗？
-AI:    理论上应该可以
-User:  旧手机号要验证吗？
-AI:    好的，我加上
-AI:    [又改了 4 个文件]
-AI:    已完成
-User:  UI 怎么还是三等分布局...
-AI:    我来重新设计
-AI:    [上下文已压缩，忘记了之前的讨论]
+User:  Add phone number editing to the profile page.
+AI:    Sure, I'll update a few files.
+AI:    [modified 6 files]
+AI:    Done.
+User:  Did you test it?
+AI:    It should work.
+User:  What about verifying the old number first?
+AI:    Good point, let me add that.
+AI:    [modified 4 more files]
+AI:    Done.
+User:  The context is getting long...
+AI:    [context compressed, forgot earlier discussion]
 ```
 
 ### With Agent Workflow
 
 ```
-User:  用重任务流程处理：个人中心增加修改手机号功能
+User:  Use the heavy workflow: add phone number editing to the profile page.
 
 Orchestrator:
-  1. "需要哪些验证方式？" → 短信验证码
-  2. "旧手机号需要验证吗？" → 需要
-  3. 写 requirements.md → 用户确认
-  4. 写 acceptance.md → 用户确认
-  5. 写 plan.md
+  1. "What verification method?" → SMS code
+  2. "Verify old number first?" → Yes
+  3. Writes requirements.md → user confirms
+  4. Writes acceptance.md → user confirms
+  5. Writes plan.md
 
-  ── 派发 Implementation Subagent ──
-     返回: DONE (4 files, tests passing)
+  ── Dispatches Implementation Subagent ──
+     Returns: DONE (4 files, tests passing)
 
-  ── 派发 Spec Compliance Reviewer ──
-     结果: PASS — all requirements covered
+  ── Dispatches Spec Compliance Reviewer ──
+     Result: PASS — all requirements covered
 
-  ── 派发 Code Quality Reviewer ──
-     结果: PASS
+  ── Dispatches Code Quality Reviewer ──
+     Result: PASS
 
-  ── 派发 Verification Subagent ──
-     结果: PASS — 12 tests, 0 failures
+  ── Dispatches Verification Subagent ──
+     Result: PASS — 12 tests, 0 failures
 
-  ── 派发 QA Subagent ──
-     结果: PASS — 8/8 acceptance criteria
+  ── Dispatches QA Subagent ──
+     Result: PASS — 8/8 acceptance criteria
 
-  → 交付：功能完成，附带测试证据
+  → Final handoff: feature complete, with evidence
 ```
 
 The user answered 3 questions. The Orchestrator managed the rest. Every step has evidence.
@@ -126,24 +122,83 @@ graph LR
     style QA fill:#8B5CF6,stroke:#7C3AED,color:#fff
 ```
 
-**The Orchestrator never edits code directly.** It only:
+## Orchestrator Boundaries
 
-1. **Talks to the user** — requirement clarification, confirmations, final handoff
-2. **Manages state** — reads/writes state.json, requirements, acceptance, plan
-3. **Dispatches subagents** — builds self-contained context packets, delegates via Agent tool
-4. **Synthesizes results** — handles subagent status, decides next action
+The Orchestrator has exactly **four jobs**. Everything else goes to subagents.
 
-## Why Subagents?
+| The Orchestrator DOES | The Orchestrator NEVER |
+|-----------------------|------------------------|
+| Talks to the user — clarifies requirements, confirms, delivers | Reads source code for implementation |
+| Manages state — state.json, requirements, acceptance, plan | Writes or edits code directly |
+| Dispatches subagents — builds context packets, delegates via Agent tool | Runs tests, lint, or build commands |
+| Synthesizes results — handles status, decides next action | Performs code review or UI review |
 
-This isn't just architectural aesthetics. It solves real problems:
+This is a hard rule, not a guideline. If you catch the Orchestrator doing any of the "NEVER" column, it's a bug.
 
-| Problem | How subagents fix it |
-|---------|---------------------|
-| **Context bloat** | Each subagent gets only what it needs — a focused context packet, not the entire conversation |
-| **Goal drift** | Subagents have explicit stop conditions; they don't wander |
-| **"Done" without evidence** | Verification and QA are separate subagents that run real tests, not vibes |
-| **Reviewer bias** | The reviewer is a different subagent than the implementer — it reads the actual code, not the report |
-| **Main thread overload** | The Orchestrator stays lightweight; code, tests, and reviews happen in parallel isolation |
+## Why Subagents Matter
+
+In a long AI coding session, the main thread's context grows with every turn: requirements, code diffs, test logs, review comments, fix attempts, user feedback, assumptions. After a few context compressions, the AI starts to:
+
+- **Forget the original goal** — drifts into tangential work
+- **Treat assumptions as facts** — unverified hypotheses become "known"
+- **Modify unrelated files** — loses track of scope
+- **Claim completion without checking** — says "done" without verifying acceptance criteria
+
+This isn't a model capability problem. It's a context management problem.
+
+Agent Workflow solves it by splitting the work:
+
+| Component | What stays in context |
+|-----------|----------------------|
+| **Orchestrator** | Task state, user decisions, stage summaries, evidence, risks. Stays lightweight. |
+| **Implementation Subagent** | Task + goal + relevant files + non-goals. Does one thing, returns status + evidence. |
+| **Spec Reviewer** | Requirements + actual code. Compares line by line, returns pass/fail with references. |
+| **Code Quality Reviewer** | Code + patterns. Checks structure, returns issues by severity. |
+| **Verification Subagent** | Changed files + test commands. Runs tests, returns results. |
+| **QA Subagent** | Acceptance criteria + code. Verifies each criterion, returns per-criterion status. |
+
+Each subagent receives a **SubagentContextPacket** — a self-contained prompt with:
+
+- **Task:** what to do
+- **Goal:** success condition
+- **Stop condition:** when to stop
+- **Relevant files:** explicit file list
+- **Known facts:** from requirements, acceptance
+- **Non-goals:** what NOT to do
+- **Expected output:** what to write, where
+- **Verification expected:** how to confirm success
+
+The subagent does its job and returns: **status, summary, changed files, evidence, risks, next action.** No conversation history leaking. No context bloat.
+
+Multi-agent division of labor isn't for show. It makes complex tasks **more stable, more controllable, more auditable, and less likely to drift** under long-context pressure.
+
+## Execution Gate: When to Ask, When to Proceed
+
+Requirement clarification is a **judgment gate**, not an interrogation. The Orchestrator follows this rule:
+
+> **Ask when the missing answer could materially change the implementation. Otherwise, record assumptions and proceed.**
+
+| Situation | Action |
+|-----------|--------|
+| Clear enough to proceed | Start working |
+| Low-risk assumption possible | Record assumption, continue |
+| Ambiguity blocks implementation | Ask only the necessary questions |
+| High-risk / destructive / security / payment / migration | Generate requirements + acceptance, request explicit approval |
+
+This applies to **all task types**: backend, frontend, refactoring, bug fixes, infrastructure.
+
+## Workflow Intensity: Use the Lightest Safe Workflow
+
+Not every task needs the full heavy workflow. The principle is: **use the lightest safe workflow.**
+
+| Task type | Workflow intensity | What runs |
+|-----------|-------------------|-----------|
+| Documentation, README, comments, prompts | **Minimal** | Edit files, return diff summary. No requirements/acceptance/plan/state. No subagents. |
+| Simple bug fix, typo, config change | **Light** | Quick clarification, implementation + verification. Skip full review chain. |
+| Feature, refactoring, multi-file change | **Heavy** | Full workflow: requirements → acceptance → plan → implementation → review → verification → QA. |
+| Security, payment, auth, migration, large refactor | **Heavy + explicit approval** | Full workflow with user confirmation before implementation. |
+
+Example — this README optimization is a documentation-only task. It doesn't need `requirements.md`, `acceptance.md`, `plan.md`, `state.json`, or QA subagents. It just needs: edit the file, show the diff, done.
 
 ## Workflow Stages
 
@@ -194,10 +249,11 @@ graph TD
 | **SubagentContextPacket** | Self-contained prompts with task, goal, files, non-goals, verification. No conversation history leaking. |
 | **Implementer 4-status return** | `DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — Orchestrator handles each |
 | **3-stage review** | Spec compliance + code quality + UI review (frontend tasks) |
+| **Execution gate** | Ask only when the answer materially changes implementation; otherwise record assumptions and proceed |
+| **Workflow intensity** | Lightest safe workflow — docs skip heavy workflow, simple fixes skip full review chain |
 | **Checkpoint & resume** | Survives context resets via handoff.md. Never resumes from memory alone. |
 | **Drift detection** | After each stage, verifies work still serves original intent |
 | **Risk-based isolation** | High-risk tasks use git worktree isolation; medium-risk shares working directory |
-| **Frontend design constraints** | Typography, color, layout, motion rules injected into implementer prompts (bonus for frontend tasks) |
 
 ## Quick Start
 
@@ -209,15 +265,11 @@ Paste this to your AI coding agent:
 请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
 ```
 
-The agent will detect your host (Claude Code, Codex, etc.), clone the repo, set up the correct skill paths, and verify the installation.
-
 ### Manual Install
 
 ```bash
-# Clone to a central location
 git clone https://github.com/xzh20121116/agent-workflow.git ~/.agent-workflow
 
-# Symlink to your host's skill directory
 # Claude Code:
 ln -s ~/.agent-workflow/skills/agent-workflow-init ~/.claude/skills/agent-workflow-init
 ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.claude/skills/agent-workflow-start
@@ -235,15 +287,11 @@ ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workfl
 帮我用 agent-workflow 初始化当前项目
 ```
 
-This sets up `docs/agent/` with project config, request templates, and AGENTS.md.
-
 ### Start a feature (heavy workflow)
 
 ```text
 用重任务流程处理：用户个人中心增加修改手机号功能
 ```
-
-The Orchestrator will clarify requirements, write acceptance criteria, get your confirmation, then automatically delegate through the full stage flow.
 
 ### Fix a bug
 
@@ -251,15 +299,11 @@ The Orchestrator will clarify requirements, write acceptance criteria, get your 
 用重任务流程处理：支付回调偶发失败，大概一天出现几次
 ```
 
-The Orchestrator investigates with you first, then delegates root cause analysis and fix to the implementation subagent.
-
 ### Beautify a frontend page
 
 ```text
 用重任务流程美化 src/pages/landing/index.tsx 页面
 ```
-
-Automatically uses the frontend implementer with design constraints, and adds a UI review stage.
 
 ### Run spec compliance review only
 
@@ -274,8 +318,6 @@ Automatically uses the frontend implementer with design constraints, and adds a 
 ```
 
 ## Included Skills
-
-Two skills, zero config:
 
 | Skill | Purpose |
 |-------|---------|
@@ -329,7 +371,8 @@ After building the initial version, the author found [Aegis](https://github.com/
 | **Review** | **3-stage** (spec + quality + UI) | 2-stage | 2-stage |
 | **Implementer** | **4-status return** | Subagent-driven | Plan-driven |
 | **Context** | **SubagentContextPacket** (isolated) | Baseline context | Plan-as-junior |
-| **Frontend** | Design constraints + UI reviewer | -- | -- |
+| **Execution gate** | Ask only when needed, record assumptions | Baseline-read before changes | Uniform process |
+| **Workflow intensity** | Lightest safe workflow per task type | Risk-adaptive | Uniform |
 | **Setup** | **Zero config** | Doctor script | Per-host plugin |
 
 ### Core advantage: Orchestrator discipline
@@ -338,41 +381,19 @@ The #1 failure mode of AI coding agents on complex tasks: **the main thread does
 
 Agent Workflow enforces a hard rule: **the Orchestrator never reads, writes, or reviews code.** Every coding task goes to a subagent with a self-contained context packet. The Orchestrator's context stays clean. The subagent stays focused. No leaking.
 
-Aegis and Superpowers allow the main thread to touch code in some scenarios. Agent Workflow doesn't. This isn't about trust — it's about discipline.
-
 This applies to **all task types**: backend APIs, database migrations, refactoring, bug fixes, infrastructure changes, and yes, frontend too.
 
 ### Core advantage: SubagentContextPacket
 
-Each subagent gets a self-contained context packet:
-
-- **Task:** what to do
-- **Goal:** success condition
-- **Relevant files:** explicit file list
-- **Non-goals:** what NOT to do
-- **Verification:** how to confirm success
-
-No conversation history leaking in. No context bloat. The subagent does its job and returns evidence.
+Each subagent gets a self-contained context packet — task, goal, files, non-goals, verification. No conversation history leaking in. The subagent does its job and returns evidence.
 
 ### Core advantage: 3-stage review
 
-Other tools have 2-stage review. Agent Workflow has 3:
-
-1. **Spec compliance** — Did you build the right thing? (reads actual code, compares to requirements)
-2. **Code quality** — Did you build it well? (structure, correctness, maintainability)
-3. **UI review** — Does it look right? (for frontend tasks: typography, layout, responsiveness, accessibility)
-
-The first two apply to **every task**. The third is a bonus for frontend work.
+Other tools have 2-stage review. Agent Workflow has 3: spec compliance, code quality, and UI review (for frontend tasks). The first two apply to **every task**.
 
 ### Bonus: Frontend quality control
 
-AI-generated frontends have a distinctive "plastic look." Agent Workflow is the only tool that addresses this — through design constraints injected into implementer prompts and a dedicated UI Reviewer with AI Slop Score (0-10). But this is one feature among many, not the core value proposition.
-
-### Why simplicity wins
-
-Two skills. Zero config. No doctor scripts. No activation modes. No host registry.
-
-Clone, symlink, start working.
+AI-generated frontends have a distinctive "plastic look." Agent Workflow addresses this through design constraints and a dedicated UI Reviewer. But this is one feature among many, not the core value proposition.
 
 ### When Agent Workflow is the right choice
 
