@@ -360,7 +360,7 @@ docs/agent/requests/REQ-20260609-001/
 
 Agent Workflow 来自**真实的日常使用** — 反复遇到同样的痛点：AI 代理不理解需求就开始乱写代码，主线程上下文膨胀导致目标漂移。
 
-初始版本完成后，作者发现了 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)。两者都有宝贵的想法。Agent Workflow **吸收了两者的精华**，并补齐了它们没有覆盖的部分。
+初始版本完成后，作者发现了 [Aegis](https://github.com/GanyuanRan/Aegis) 和 [Superpowers](https://github.com/obra/superpowers)。两者都有宝贵的想法。Agent Workflow 借鉴了它们的核心思路，并在此基础上做了简化和补充。
 
 ## Agent Workflow 的独有优势
 
@@ -406,7 +406,7 @@ AI 生成的前端有一种"塑料感"。Agent Workflow 通过设计约束注入
 - 你想要显式的状态处理（DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED）
 - 你想要自包含的子代理执行，不泄漏上下文
 - 你想要简单的安装和最少的配置
-- 你想要 Aegis 和 Superpowers 的精华，但不要它们的复杂度
+- 你想要经过验证的工作流模式，同时保持简单的安装和配置
 
 ### 什么时候用别的
 

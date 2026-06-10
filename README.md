@@ -15,8 +15,8 @@
 
 <p align="center">
     Lightweight workflow skills for Claude Code, Codex, and other AI coding agents.<br/>
-    Turns a "vibe coder" into a disciplined project manager that clarifies requirements,<br/>
-    delegates to subagents, runs reviews, and delivers evidence — before claiming it's done.
+    Turns an AI coding agent into a disciplined project manager that clarifies requirements,<br/>
+    delegates work, runs reviews, and delivers evidence before claiming completion.
 </p>
 
 <p align="center">
@@ -262,7 +262,7 @@ graph TD
 Paste this to your AI coding agent:
 
 ```text
-请阅读 https://github.com/xzh20121116/agent-workflow，帮我全局安装 agent-workflow 技能。
+Read https://github.com/xzh20121116/agent-workflow and install the agent-workflow skills globally.
 ```
 
 ### Manual Install
@@ -284,37 +284,37 @@ ln -s ~/.agent-workflow/skills/agent-workflow-start ~/.codex/skills/agent-workfl
 ### Initialize a project
 
 ```text
-帮我用 agent-workflow 初始化当前项目
+Initialize the current project with agent-workflow.
 ```
 
 ### Start a feature (heavy workflow)
 
 ```text
-用重任务流程处理：用户个人中心增加修改手机号功能
+Use heavy workflow: add phone number editing to the user profile page.
 ```
 
 ### Fix a bug
 
 ```text
-用重任务流程处理：支付回调偶发失败，大概一天出现几次
+Use heavy workflow: payment callback fails intermittently, a few times per day.
 ```
 
 ### Beautify a frontend page
 
 ```text
-用重任务流程美化 src/pages/landing/index.tsx 页面
+Use heavy workflow to beautify src/pages/landing/index.tsx.
 ```
 
 ### Run spec compliance review only
 
 ```text
-帮我审查 src/services/auth.service.ts 是否符合 docs/requirements.md 中的需求
+Review src/services/auth.service.ts against docs/requirements.md for spec compliance.
 ```
 
 ### Run code quality review only
 
 ```text
-帮我做代码质量审查：src/services/order.service.ts
+Run code quality review on src/services/order.service.ts.
 ```
 
 ## Included Skills
@@ -401,7 +401,7 @@ AI-generated frontends have a distinctive "plastic look." Agent Workflow address
 - You want explicit status handling (DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED)
 - You want self-contained subagent execution with no context leaking
 - You want a simple setup with minimal configuration
-- You want the best ideas from Aegis and Superpowers without the complexity
+- You want proven patterns from Aegis and Superpowers in a simpler package
 
 ### When to use something else
 
