@@ -134,6 +134,24 @@ graph LR
 
 这是硬规则，不是建议。如果你发现马斯克在做"绝不"列的事，那就是 bug。
 
+### 由 hook 强制执行，而不只靠提示词
+
+提示词可能被忽略。在 Claude Code 中，`agent-workflow-init` 会在 `.claude/settings.json` 里注册一个**编排器守卫（Orchestrator guard）**：
+
+| Hook | 强制内容 |
+|------|---------|
+| `PreToolUse` | 会话绑定到进行中的请求时，**主线程**不能在 `docs/agent/` 以外 `Edit`/`Write`，不能 `Read`/`Grep`/`Glob` 源码，也不能运行白名单（`stop-audit.js`、工作流脚本、`git status/log`）以外的命令。子代理不受限制。 |
+| `PostToolUse` | `start_agent_workflow.py` 运行后自动把当前会话绑定到该请求，线程绑定不再依赖 agent 知道自己的线程 ID。 |
+| `Stop` | 当 `state.json` 显示 `next_action_executable=true` 且没有待用户确认的事项时，阻止提前结束。 |
+
+没有绑定请求的会话完全不受影响。可在 `.codex/workflow/project.json` 中调整或关闭：
+
+```json
+"orchestrator_guard": { "enabled": true, "block_source_reads": true }
+```
+
+也可以用 `init_agent_workflow.py --no-claude-hooks` 完全跳过。
+
 ## 为什么用子代理？
 
 在一个长时间的 AI 编程会话中，主线程的上下文会随着每一轮对话膨胀：需求、代码差异、测试日志、审查意见、修复尝试、用户反馈、假设。经过几次上下文压缩后，AI 开始：
@@ -239,6 +257,18 @@ graph TD
 | `verification` | 子代理 | 跑测试、lint、构建 |
 | `qa` | 子代理 | 逐条验证验收标准 |
 | `final_handoff` | 马斯克 | 带证据包向用户汇报 |
+
+## 效果度量
+
+每次守卫拦截和子代理派发都会记录到 `docs/agent/requests/<id>/metrics.jsonl`，用下面的命令汇总：
+
+```bash
+python3 scripts/agent/workflow_metrics.py --project-root .           # Markdown 表格
+python3 scripts/agent/workflow_metrics.py --project-root . --tokens  # 附带 Claude Code 会话的 token 用量
+python3 scripts/agent/workflow_metrics.py --project-root . --json
+```
+
+每个请求会给出：阶段进度、耗时（分钟）、按角色统计的子代理派发次数、守卫拦截次数（编排器试图碰代码的次数）、被阻止的提前结束次数、证据数量和 token 用量。可复现的 A/B 对比方法见 [`benchmarks/README.md`](benchmarks/README.md)。
 
 ## 核心特性
 
@@ -426,6 +456,8 @@ AI 生成的前端有一种"塑料感"。Agent Workflow 通过设计约束注入
 │   │   │   └── change-request-template.md
 │   │   └── scripts/
 │   │       ├── init_agent_workflow.py
+│   │       ├── agent_workflow_guard.py
+│   │       ├── workflow_metrics.py
 │   │       └── install_symlinks.sh
 │   └── agent-workflow-start/
 │       ├── SKILL.md
@@ -440,6 +472,9 @@ AI 生成的前端有一种"塑料感"。Agent Workflow 通过设计约束注入
 │       │   └── qa-prompt.md
 │       └── scripts/
 │           └── start_agent_workflow.py
+├── benchmarks/README.md
+├── tests/
+├── .github/workflows/ci.yml
 ├── LICENSE
 └── README.md
 ```
