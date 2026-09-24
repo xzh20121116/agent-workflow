@@ -9,17 +9,29 @@ Usage:
   python init_agent_workflow.py --project-root .
   python init_agent_workflow.py --project-root . --overwrite-agents
   python init_agent_workflow.py --project-root . --overwrite-custom-agents
+  python init_agent_workflow.py --project-root . --no-claude-hooks
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 PROJECT_VERSION = "3.0"
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+GUARD_SCRIPT = "agent_workflow_guard.py"
+METRICS_SCRIPT = "workflow_metrics.py"
+GUARD_COMMAND = f'python3 "$CLAUDE_PROJECT_DIR/scripts/agent/{GUARD_SCRIPT}"'
+GUARD_HOOKS = {
+    "PreToolUse": {"matcher": "Agent|Task|Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|LS|Bash"},
+    "PostToolUse": {"matcher": "Bash"},
+    "Stop": {},
+}
 
 
 AGENTS_MD = """# AGENTS.md
@@ -598,6 +610,7 @@ def ensure_project_layout(project_root: Path, overwrite_agents: bool, overwrite_
             "supports_thread_binding": True,
         }
     )
+    project_payload.setdefault("orchestrator_guard", {"enabled": True, "block_source_reads": True})
     write_json(project_json_path, project_payload, overwrite=True)
 
     write_text(project_root / ".codex/agents/review.toml", REVIEW_AGENT, overwrite_custom_agents)
@@ -642,11 +655,48 @@ def ensure_project_layout(project_root: Path, overwrite_agents: bool, overwrite_
     stop_audit_path.chmod(0o755)
 
 
+def install_workflow_scripts(project_root: Path) -> None:
+    target_dir = project_root / "scripts/agent"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for name in (GUARD_SCRIPT, METRICS_SCRIPT):
+        target = target_dir / name
+        shutil.copyfile(SCRIPTS_DIR / name, target)
+        target.chmod(0o755)
+
+
+def install_claude_hooks(project_root: Path) -> None:
+    """Merge the Orchestrator guard hooks into .claude/settings.json without touching other settings."""
+    settings_path = project_root / ".claude/settings.json"
+    settings = {}
+    if settings_path.exists():
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            raise SystemExit(f"{settings_path} is not valid JSON; fix it or rerun with --no-claude-hooks.")
+
+    hooks = settings.setdefault("hooks", {})
+    for event, extra in GUARD_HOOKS.items():
+        groups = hooks.setdefault(event, [])
+        groups[:] = [
+            group
+            for group in groups
+            if not any(GUARD_SCRIPT in hook.get("command", "") for hook in group.get("hooks", []))
+        ]
+        groups.append({**extra, "hooks": [{"type": "command", "command": GUARD_COMMAND}]})
+
+    write_json(settings_path, settings, overwrite=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--overwrite-agents", action="store_true")
     parser.add_argument("--overwrite-custom-agents", action="store_true")
+    parser.add_argument(
+        "--no-claude-hooks",
+        action="store_true",
+        help="Do not register the Orchestrator guard hooks in .claude/settings.json",
+    )
     parser.add_argument("--new-request", help="Deprecated and unsupported in v3. Use agent-workflow-start instead.")
     args = parser.parse_args()
 
@@ -655,6 +705,10 @@ def main() -> None:
 
     project_root = Path(args.project_root).resolve()
     ensure_project_layout(project_root, args.overwrite_agents, args.overwrite_custom_agents)
+    install_workflow_scripts(project_root)
+    if not args.no_claude_hooks:
+        install_claude_hooks(project_root)
+        print("Registered Orchestrator guard hooks in .claude/settings.json.")
     print("Initialized or reconciled project-level heavy workflow.")
 
 

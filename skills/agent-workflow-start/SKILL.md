@@ -491,6 +491,8 @@ python skills/agent-workflow-start/scripts/start_agent_workflow.py --project-roo
 
 Provide `--thread-id` when the runtime exposes one.
 
+On Claude Code with the Orchestrator guard installed, the `PostToolUse` hook binds this session to the new request automatically. From then on the main thread's attempts to read/edit source files or run non-workflow commands are denied by the hook: treat a denial as a signal to dispatch a subagent, never try to work around it. A `Stop` hook also blocks ending the turn while `next_action_executable=true` and no user confirmation is pending; either continue, or record the real blocker/confirmation boundary in `state.json` first.
+
 ## Completion Standard
 
 `agent-workflow-start` is complete only when the request has either:

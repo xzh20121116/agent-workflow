@@ -135,6 +135,24 @@ The Orchestrator has exactly **four jobs**. Everything else goes to subagents.
 
 This is a hard rule, not a guideline. If you catch the Orchestrator doing any of the "NEVER" column, it's a bug.
 
+### Enforced by hooks, not just by prompts
+
+Prompts alone can be ignored. On Claude Code, `agent-workflow-init` also registers an **Orchestrator guard** in `.claude/settings.json`:
+
+| Hook | What it enforces |
+|------|------------------|
+| `PreToolUse` | While the session is bound to an active request, the **main thread** is denied `Edit`/`Write` outside `docs/agent/`, `Read`/`Grep`/`Glob` on source files, and any shell command not on the workflow allowlist (`stop-audit.js`, workflow scripts, `git status/log`). Subagents are never restricted. |
+| `PostToolUse` | Binds the session to the request right after `start_agent_workflow.py` runs, so thread binding no longer depends on the agent knowing its own thread ID. |
+| `Stop` | Blocks a premature stop while `state.json` says `next_action_executable=true` and no user confirmation is pending. |
+
+The guard is inert outside a bound request, so normal chats in the same project are unaffected. Tune or disable it in `.codex/workflow/project.json`:
+
+```json
+"orchestrator_guard": { "enabled": true, "block_source_reads": true }
+```
+
+Skip it entirely with `init_agent_workflow.py --no-claude-hooks`.
+
 ## Why Subagents Matter
 
 In a long AI coding session, the main thread's context grows with every turn: requirements, code diffs, test logs, review comments, fix attempts, user feedback, assumptions. After a few context compressions, the AI starts to:
@@ -240,6 +258,18 @@ graph TD
 | `verification` | Subagent | Runs tests, lint, build |
 | `qa` | Subagent | Verifies every acceptance criterion against code |
 | `final_handoff` | Orchestrator | Reports results with evidence bundle |
+
+## Measuring Effectiveness
+
+Every guard decision and subagent dispatch is logged to `docs/agent/requests/<id>/metrics.jsonl`. Aggregate it with:
+
+```bash
+python3 scripts/agent/workflow_metrics.py --project-root .           # Markdown table
+python3 scripts/agent/workflow_metrics.py --project-root . --tokens  # + token usage from Claude Code transcripts
+python3 scripts/agent/workflow_metrics.py --project-root . --json
+```
+
+You get, per request: stage progress, wall-clock minutes, subagent dispatches by role, guard blocks (times the Orchestrator tried to touch code), premature stops blocked, evidence counts, and token usage. See [`benchmarks/README.md`](benchmarks/README.md) for a repeatable A/B protocol to compare runs with and without the workflow.
 
 ## Key Features
 
@@ -421,6 +451,8 @@ AI-generated frontends have a distinctive "plastic look." Agent Workflow address
 │   │   │   └── change-request-template.md
 │   │   └── scripts/
 │   │       ├── init_agent_workflow.py
+│   │       ├── agent_workflow_guard.py
+│   │       ├── workflow_metrics.py
 │   │       └── install_symlinks.sh
 │   └── agent-workflow-start/
 │       ├── SKILL.md
@@ -435,6 +467,9 @@ AI-generated frontends have a distinctive "plastic look." Agent Workflow address
 │       │   └── qa-prompt.md
 │       └── scripts/
 │           └── start_agent_workflow.py
+├── benchmarks/README.md
+├── tests/
+├── .github/workflows/ci.yml
 ├── LICENSE
 └── README.md
 ```

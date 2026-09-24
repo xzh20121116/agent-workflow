@@ -58,6 +58,9 @@ Creates or reconciles:
 - `docs/agent/templates/project/`
 - `docs/agent/templates/request/`
 - `scripts/agent/stop-audit.js`
+- `scripts/agent/agent_workflow_guard.py` (Claude Code Orchestrator guard hook)
+- `scripts/agent/workflow_metrics.py` (effectiveness metrics)
+- `.claude/settings.json` hook entries (merged, other settings untouched; skip with `--no-claude-hooks`)
 
 ### `agent-workflow-start`
 
@@ -145,6 +148,8 @@ python skills/agent-workflow-init/scripts/init_agent_workflow.py --project-root 
 ```
 
 Optional overwrite flags are allowed only when the user explicitly approves them.
+
+Pass `--no-claude-hooks` if the user does not want the Orchestrator guard registered in `.claude/settings.json`. After installing hooks, tell the user to restart Claude Code (or review them in `/hooks`) so they take effect.
 
 ## Completion Standard
 
